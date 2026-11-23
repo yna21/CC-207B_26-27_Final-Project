@@ -116,7 +116,9 @@ class _DriverAlertsScreenState extends State<DriverAlertsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // A list reads best in a narrower column, even on a wide screen.
     return DriverPage(
+      maxWidth: 720,
       children: [
         const DriverHeader(
           title: 'Notifications',
@@ -124,20 +126,21 @@ class _DriverAlertsScreenState extends State<DriverAlertsScreen> {
           icon: Icons.tune,
         ),
         const SizedBox(height: 16),
-        Row(
+        // Wrap moves a chip to the next line when the screen is too narrow.
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
             _FilterChip(
               label: 'All · ${_alerts.length}',
               selected: _filter == _Filter.all,
               onTap: () => setState(() => _filter = _Filter.all),
             ),
-            const SizedBox(width: 8),
             _FilterChip(
               label: 'Parking',
               selected: _filter == _Filter.parking,
               onTap: () => setState(() => _filter = _Filter.parking),
             ),
-            const SizedBox(width: 8),
             _FilterChip(
               label: 'Account',
               selected: _filter == _Filter.account,

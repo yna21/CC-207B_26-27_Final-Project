@@ -12,20 +12,105 @@ const TextStyle driverLabelStyle = TextStyle(
   color: AppColors.textMuted,
 );
 
-/// Standard page body: scrollable, with the same padding on every screen.
+/// Screen width at which the driver interface switches from the phone layout
+/// (bottom bar, one column) to the wide layout (side menu, two columns).
+const double driverWideBreakpoint = 720;
+
+/// Standard page body: scrollable and centered. The side padding and the
+/// widest allowed content change with the screen width.
 class DriverPage extends StatelessWidget {
-  const DriverPage({super.key, required this.children});
+  const DriverPage({super.key, required this.children, this.maxWidth = 1000});
 
   final List<Widget> children;
 
+  /// The widest the content may get. On bigger screens it stays centered.
+  final double maxWidth;
+
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
-      ),
+    // LayoutBuilder tells us the width this page really has.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        // very narrow phone: 12, normal phone: 16, tablet or desktop: 24
+        final side =
+            width < 360 ? 12.0 : (width >= driverWideBreakpoint ? 24.0 : 16.0);
+        final contentWidth = (width - 2 * side).clamp(0.0, maxWidth).toDouble();
+
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(side, 16, side, 24),
+          child: Center(
+            child: SizedBox(
+              width: contentWidth,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: children,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Shows [left] and [right] side by side when there is room (a tablet or a
+/// desktop window), and stacked, left first, on a phone.
+class DriverColumns extends StatelessWidget {
+  const DriverColumns({
+    super.key,
+    required this.left,
+    required this.right,
+    this.leftFlex = 1,
+    this.rightFlex = 1,
+    this.gap = 20,
+  });
+
+  final List<Widget> left;
+  final List<Widget> right;
+
+  /// How the width is shared between the two columns (1 : 1 by default).
+  final int leftFlex;
+  final int rightFlex;
+
+  /// Space between the two parts when they are stacked on a phone.
+  final double gap;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= 640) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: leftFlex,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: left,
+                ),
+              ),
+              const SizedBox(width: 24),
+              Expanded(
+                flex: rightFlex,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: right,
+                ),
+              ),
+            ],
+          );
+        }
+        // Phone: one column, in the same order as the prototype.
+        return SizedBox(
+          width: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [...left, SizedBox(height: gap), ...right],
+          ),
+        );
+      },
     );
   }
 }
@@ -133,29 +218,102 @@ class DriverSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
+        // The title takes the free space and wraps if it is too long.
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+            ),
           ),
         ),
-        if (action != null)
-          GestureDetector(
-            onTap: onActionTap,
-            child: Text(
-              action!,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primary,
+        if (action != null) ...[
+          const SizedBox(width: 12),
+          // The action text may use at most 160 px, then it wraps.
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 160),
+            child: GestureDetector(
+              onTap: onActionTap,
+              child: Text(
+                action!,
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
               ),
             ),
           ),
+        ],
       ],
+    );
+  }
+}
+
+/// A label on the left and its value on the right.
+/// On a narrow screen, or with big text, the value drops under the label
+/// instead of overflowing. Pass [trailing] to show a widget (like a status
+/// chip) instead of the value text.
+class DriverInfoRow extends StatelessWidget {
+  const DriverInfoRow({
+    super.key,
+    required this.label,
+    this.value,
+    this.trailing,
+  });
+
+  final String label;
+  final String? value;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    // Wrap only stretches to the full width when it is inside a SizedBox
+    // with an infinite width, which is what makes spaceBetween work.
+    return SizedBox(
+      width: double.infinity,
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 12,
+        runSpacing: 2,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+          ),
+          trailing ??
+              Text(
+                value ?? '',
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Stops very large phone text sizes (an accessibility setting) from
+/// breaking the layout. Text can still grow, up to 1.3 times its normal size.
+class DriverTextScale extends StatelessWidget {
+  const DriverTextScale({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.3,
+      child: child,
     );
   }
 }

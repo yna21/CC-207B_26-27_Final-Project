@@ -31,26 +31,35 @@ class _RenewalPaymentScreenState extends State<RenewalPaymentScreen> {
               'Select your preferred payment method for the $renewalFee renewal fee.',
         ),
         const SizedBox(height: 28),
-        _PaymentOption(
-          label: 'Pay directly at the Admin Cashier.',
-          selected: _cashierSelected,
-          onTap: () => setState(() => _cashierSelected = !_cashierSelected),
-        ),
-        const SizedBox(height: 12),
-        const RenewalRowsCard(rows: [RenewalRow('Renewal fee', renewalFee)]),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            // null disables the button until a method is selected.
-            onPressed: _cashierSelected
-                ? () => Navigator.pushNamed(
-                      context,
-                      AppRoutes.driverRenewalDetails,
-                    )
-                : null,
-            child: const Text('Continue'),
-          ),
+        // Two columns on a wide screen, one column (same order) on a phone.
+        DriverColumns(
+          gap: 12,
+          left: [
+            _PaymentOption(
+              label: 'Pay directly at the Admin Cashier.',
+              selected: _cashierSelected,
+              onTap: () => setState(() => _cashierSelected = !_cashierSelected),
+            ),
+          ],
+          right: [
+            const RenewalRowsCard(
+              rows: [RenewalRow('Renewal fee', renewalFee)],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                // null disables the button until a method is selected.
+                onPressed: _cashierSelected
+                    ? () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.driverRenewalDetails,
+                        )
+                    : null,
+                child: const Text('Continue'),
+              ),
+            ),
+          ],
         ),
       ],
     );
