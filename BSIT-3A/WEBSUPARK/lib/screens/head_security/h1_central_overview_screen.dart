@@ -4,7 +4,9 @@ import 'package:websupark/screens/head_security/head_widgets.dart';
 import 'package:websupark/theme/app_colors.dart';
 
 class CentralOverviewScreen extends StatelessWidget {
-  const CentralOverviewScreen({super.key});
+  final ValueChanged<int> onNavigate;
+
+  const CentralOverviewScreen({super.key, required this.onNavigate});
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +36,7 @@ class CentralOverviewScreen extends StatelessWidget {
               label: 'TOTAL SPACES',
               value: '$total',
               note: '${sampleAreas.length} areas',
+              onTap: () => onNavigate(2),
             ),
             StatCard(
               icon: Icons.directions_car_outlined,
@@ -41,6 +44,7 @@ class CentralOverviewScreen extends StatelessWidget {
               value: '$occupied',
               note: '${(pct * 100).toStringAsFixed(1)}%',
               noteColor: AppColors.action,
+              onTap: () => onNavigate(2),
             ),
             StatCard(
               icon: Icons.check_circle_outline,
@@ -49,12 +53,14 @@ class CentralOverviewScreen extends StatelessWidget {
               value: '${total - occupied}',
               note: '${((1 - pct) * 100).toStringAsFixed(1)}%',
               noteColor: AppColors.success,
+              onTap: () => onNavigate(2),
             ),
             StatCard(
               icon: Icons.login,
               label: 'VEHICLES INSIDE',
               value: '$inside',
               note: 'registered',
+              onTap: () => onNavigate(1),
             ),
             StatCard(
               icon: Icons.logout,
@@ -62,6 +68,7 @@ class CentralOverviewScreen extends StatelessWidget {
               label: 'VEHICLES OUTSIDE',
               value: '$outside',
               note: 'registered',
+              onTap: () => onNavigate(1),
             ),
             StatCard(
               icon: Icons.warning_amber_rounded,
@@ -70,82 +77,161 @@ class CentralOverviewScreen extends StatelessWidget {
               value: '${sampleViolations.length}',
               note: 'total',
               noteColor: AppColors.danger,
+              onTap: () => onNavigate(3),
             ),
           ],
         ),
         const SizedBox(height: 16),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 3,
-              child: Column(
-                children: [
-                  Panel(
-                    title: 'Parking-area occupancy',
-                    caption: '$occupied / $total spaces',
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColors.sidebar,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            children: [
-                              Text(
-                                '${(pct * 100).toStringAsFixed(1)}%',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final leftColumn = Column(
+              children: [
+                Panel(
+                  title: 'Parking-area occupancy',
+                  caption: '$occupied / $total spaces',
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.sidebar,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              '${(pct * 100).toStringAsFixed(1)}%',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    UsageBar(
-                                      ratio: pct,
-                                      color: AppColors.action,
-                                      background: Colors.white24,
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  UsageBar(
+                                    ratio: pct,
+                                    color: AppColors.action,
+                                    background: Colors.white24,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    '$occupied occupied · ${total - occupied} available',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
                                     ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      '$occupied occupied · ${total - occupied} available',
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      for (final a in sampleAreas)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '${a.id} · ${a.name}',
                                       style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
                                       ),
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                  Text(
+                                    '${a.occupied} / ${a.capacity} occupied · ${(a.ratio * 100).round()}%',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              UsageBar(
+                                ratio: a.ratio,
+                                color: occupancyColor(a.ratio),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        for (final a in sampleAreas)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 14),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Panel(
+                  title: 'Real-time field feed',
+                  caption: 'Guard activity',
+                  child: Column(
+                    children: [
+                      for (final a in sampleActivities) ActivityTile(a),
+                    ],
+                  ),
+                ),
+              ],
+            );
+
+            final rightColumn = Column(
+              children: [
+                Panel(
+                  title: 'Urgent violations',
+                  caption: '${open.length} require action',
+                  child: open.isEmpty
+                      ? const Text('No open violations.')
+                      : Column(
+                          children: [
+                            for (final v in open.take(3))
+                              Container(
+                                width: double.infinity,
+                                margin: const EdgeInsets.only(bottom: 10),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: violationColor(v.status)
+                                      .withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: violationColor(v.status)
+                                        .withValues(alpha: 0.35),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(
-                                      child: Text(
-                                        '${a.id} · ${a.name}',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            v.plate,
+                                            style: monoStyle,
+                                          ),
                                         ),
+                                        StatusPill(
+                                          label: violationLabel(v.status),
+                                          color: violationColor(v.status),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      v.type,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
                                       ),
                                     ),
                                     Text(
-                                      '${a.occupied} / ${a.capacity} occupied · ${(a.ratio * 100).round()}%',
+                                      'Assigned ${v.assignedAreaId} → detected ${v.detectedAreaId} · ${v.reportedAt}',
                                       style: const TextStyle(
                                         fontSize: 12,
                                         color: AppColors.textMuted,
@@ -153,114 +239,41 @@ class CentralOverviewScreen extends StatelessWidget {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 6),
-                                UsageBar(
-                                  ratio: a.ratio,
-                                  color: occupancyColor(a.ratio),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Panel(
-                    title: 'Real-time field feed',
-                    caption: 'Guard activity',
-                    child: Column(
-                      children: [
-                        for (final a in sampleActivities) ActivityTile(a),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              flex: 2,
-              child: Column(
-                children: [
-                  Panel(
-                    title: 'Urgent violations',
-                    caption: '${open.length} require action',
-                    child: open.isEmpty
-                        ? const Text('No open violations.')
-                        : Column(
-                            children: [
-                              for (final v in open.take(3))
-                                Container(
-                                  width: double.infinity,
-                                  margin: const EdgeInsets.only(bottom: 10),
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: violationColor(v.status)
-                                        .withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: violationColor(v.status)
-                                          .withValues(alpha: 0.35),
-                                    ),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              v.plate,
-                                              style: monoStyle,
-                                            ),
-                                          ),
-                                          StatusPill(
-                                            label: violationLabel(v.status),
-                                            color: violationColor(v.status),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        v.type,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Assigned ${v.assignedAreaId} → detected ${v.detectedAreaId} · ${v.reportedAt}',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: AppColors.textMuted,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          ),
-                  ),
-                  const SizedBox(height: 16),
-                  Panel(
-                    title: 'Monitoring summary',
-                    child: Column(
-                      children: [
-                        DetailRow(
-                          'Yellow pass vehicles inside',
-                          '$yellowInside',
+                              ),
+                          ],
                         ),
-                        DetailRow('Outside vehicles on site', '$outsideOnSite'),
-                        DetailRow('Open violations', '${open.length}'),
-                        DetailRow('Vehicles currently inside', '$inside'),
-                      ],
-                    ),
+                ),
+                const SizedBox(height: 16),
+                Panel(
+                  title: 'Monitoring summary',
+                  child: Column(
+                    children: [
+                      DetailRow('Yellow pass vehicles inside', '$yellowInside'),
+                      DetailRow('Outside vehicles on site', '$outsideOnSite'),
+                      DetailRow('Open violations', '${open.length}'),
+                      DetailRow('Vehicles currently inside', '$inside'),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          ],
+                ),
+              ],
+            );
+
+            if (constraints.maxWidth < 900) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [leftColumn, const SizedBox(height: 16), rightColumn],
+              );
+            }
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 3, child: leftColumn),
+                const SizedBox(width: 16),
+                Expanded(flex: 2, child: rightColumn),
+              ],
+            );
+          },
         ),
       ],
     );
