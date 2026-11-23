@@ -100,6 +100,149 @@ class _ParkingMonitoringScreenState extends State<ParkingMonitoringScreen> {
     // The grid shows at most 24 slots of the area.
     final shown = area.capacity < 24 ? area.capacity : 24;
     final occupiedShown = (area.ratio * shown).round();
+    final mainPanel = Panel(
+      title: '${area.id} · ${area.name}',
+      caption: '${area.available} of ${area.capacity} available',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.square_outlined, size: 14, color: AppColors.textMuted),
+              SizedBox(width: 4),
+              Text('Available', style: TextStyle(fontSize: 12)),
+              SizedBox(width: 16),
+              Icon(Icons.square, size: 14, color: AppColors.sidebar),
+              SizedBox(width: 4),
+              Text('Occupied', style: TextStyle(fontSize: 12)),
+              SizedBox(width: 16),
+              Icon(Icons.square, size: 14, color: AppColors.warning),
+              SizedBox(width: 4),
+              Text('Mismatch', style: TextStyle(fontSize: 12)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (var i = 0; i < shown; i++)
+                _slot(
+                  label: '${area.id}-${(i + 1).toString().padLeft(2, '0')}',
+                  occupied: i < occupiedShown,
+                  plate: i < mismatches.length
+                      ? mismatches[i].plate
+                      : _plates[i % _plates.length],
+                  mismatch: i < occupiedShown && i < mismatches.length,
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Slot positions are simulated. Parking location detection is simulated in the browser.',
+            style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+          ),
+          for (final v in mismatches)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: InfoBanner(
+                icon: Icons.warning_amber_rounded,
+                color: AppColors.warning,
+                title: '${v.plate} · ASSIGNMENT MISMATCH',
+                text:
+                    'Assigned ${v.assignedAreaId} · Detected ${v.detectedAreaId} · reported by ${v.reportedBy}',
+              ),
+            ),
+        ],
+      ),
+    );
+
+    final sidePanels = Column(
+      children: [
+        Panel(
+          title: 'Zone capacity',
+          caption: 'Tap an area',
+          child: Column(
+            children: [
+              for (var i = 0; i < sampleAreas.length; i++)
+                InkWell(
+                  onTap: () => setState(() => _areaIndex = i),
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '${sampleAreas[i].id} · ${sampleAreas[i].name}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: i == _areaIndex
+                                      ? AppColors.action
+                                      : AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              '${sampleAreas[i].occupied} / ${sampleAreas[i].capacity}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        UsageBar(
+                          ratio: sampleAreas[i].ratio,
+                          color: occupancyColor(sampleAreas[i].ratio),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${(sampleAreas[i].ratio * 100).round()}% occupied',
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                            Text(
+                              '${sampleAreas[i].available} available',
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                color: AppColors.success,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Panel(
+          title: 'Entry / exit activity',
+          child: Column(
+            children: [
+              for (final a in sampleActivities.where(
+                (a) =>
+                    a.kind == ActivityKind.entry ||
+                    a.kind == ActivityKind.exit ||
+                    a.kind == ActivityKind.mismatch,
+              ))
+                ActivityTile(a),
+            ],
+          ),
+        ),
+      ],
+    );
 
     return HeadPage(
       eyebrow: 'FACILITY INTELLIGENCE · PARKING AREAS',
@@ -146,169 +289,24 @@ class _ParkingMonitoringScreenState extends State<ParkingMonitoringScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 3,
-              child: Panel(
-                title: '${area.id} · ${area.name}',
-                caption: '${area.available} of ${area.capacity} available',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(
-                          Icons.square_outlined,
-                          size: 14,
-                          color: AppColors.textMuted,
-                        ),
-                        SizedBox(width: 4),
-                        Text('Available', style: TextStyle(fontSize: 12)),
-                        SizedBox(width: 16),
-                        Icon(Icons.square, size: 14, color: AppColors.sidebar),
-                        SizedBox(width: 4),
-                        Text('Occupied', style: TextStyle(fontSize: 12)),
-                        SizedBox(width: 16),
-                        Icon(Icons.square, size: 14, color: AppColors.warning),
-                        SizedBox(width: 4),
-                        Text('Mismatch', style: TextStyle(fontSize: 12)),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (var i = 0; i < shown; i++)
-                          _slot(
-                            label:
-                                '${area.id}-${(i + 1).toString().padLeft(2, '0')}',
-                            occupied: i < occupiedShown,
-                            plate: i < mismatches.length
-                                ? mismatches[i].plate
-                                : _plates[i % _plates.length],
-                            mismatch:
-                                i < occupiedShown && i < mismatches.length,
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Slot positions are simulated. Parking location detection is simulated in the browser.',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                    for (final v in mismatches)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: InfoBanner(
-                          icon: Icons.warning_amber_rounded,
-                          color: AppColors.warning,
-                          title: '${v.plate} · ASSIGNMENT MISMATCH',
-                          text:
-                              'Assigned ${v.assignedAreaId} · Detected ${v.detectedAreaId} · reported by ${v.reportedBy}',
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              flex: 2,
-              child: Column(
-                children: [
-                  Panel(
-                    title: 'Zone capacity',
-                    caption: 'Tap an area',
-                    child: Column(
-                      children: [
-                        for (var i = 0; i < sampleAreas.length; i++)
-                          InkWell(
-                            onTap: () => setState(() => _areaIndex = i),
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 14),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          '${sampleAreas[i].id} · ${sampleAreas[i].name}',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13,
-                                            color: i == _areaIndex
-                                                ? AppColors.action
-                                                : AppColors.textPrimary,
-                                          ),
-                                        ),
-                                      ),
-                                      Text(
-                                        '${sampleAreas[i].occupied} / ${sampleAreas[i].capacity}',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 6),
-                                  UsageBar(
-                                    ratio: sampleAreas[i].ratio,
-                                    color: occupancyColor(sampleAreas[i].ratio),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        '${(sampleAreas[i].ratio * 100).round()}% occupied',
-                                        style: const TextStyle(
-                                          fontSize: 11.5,
-                                          color: AppColors.textMuted,
-                                        ),
-                                      ),
-                                      Text(
-                                        '${sampleAreas[i].available} available',
-                                        style: const TextStyle(
-                                          fontSize: 11.5,
-                                          color: AppColors.success,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Panel(
-                    title: 'Entry / exit activity',
-                    child: Column(
-                      children: [
-                        for (final a in sampleActivities.where(
-                          (a) =>
-                              a.kind == ActivityKind.entry ||
-                              a.kind == ActivityKind.exit ||
-                              a.kind == ActivityKind.mismatch,
-                        ))
-                          ActivityTile(a),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth < 900) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [mainPanel, const SizedBox(height: 16), sidePanels],
+              );
+            }
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 3, child: mainPanel),
+                const SizedBox(width: 16),
+                Expanded(flex: 2, child: sidePanels),
+              ],
+            );
+          },
         ),
       ],
     );

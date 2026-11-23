@@ -12,12 +12,21 @@ class ViolationManagementScreen extends StatefulWidget {
 }
 
 class _ViolationManagementScreenState extends State<ViolationManagementScreen> {
+  final ScrollController _tableController = ScrollController();
+
   // A copy, so changes stay inside this screen.
   // TODO: replace with getAllViolations() and an update call.
+
   late List<SampleViolation> _violations;
   String? _selectedId;
   String _query = '';
   ViolationStatus? _statusFilter; // null means "Status: All"
+
+  @override
+  void dispose() {
+    _tableController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -236,61 +245,97 @@ class _ViolationManagementScreenState extends State<ViolationManagementScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 3,
-              child: Panel(
-                title: 'Reported violations and history',
-                caption: '${filtered.length} records',
-                child: HeadTable(
-                  columns: const [
-                    HeadColumn('Incident / vehicle', flex: 3),
-                    HeadColumn('Violation', flex: 2),
-                    HeadColumn('Date / time', flex: 2),
-                    HeadColumn('Location', flex: 2),
-                    HeadColumn('Reported by', flex: 2),
-                    HeadColumn('Status', flex: 2),
-                  ],
-                  selectedIndex: selectedIndex >= 0 ? selectedIndex : null,
-                  onRowTap: (i) =>
-                      setState(() => _selectedId = filtered[i].incidentNumber),
-                  emptyText: 'No violations match your search.',
-                  rows: [
-                    for (final v in filtered)
-                      [
-                        TwoLineCell(v.plate, v.incidentNumber),
-                        Text(v.type, style: const TextStyle(fontSize: 13)),
-                        Text(
-                          v.reportedAt,
-                          style: const TextStyle(fontSize: 12.5),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final tablePanel = Panel(
+              title: 'Reported violations and history',
+              caption: '${filtered.length} records',
+              child: LayoutBuilder(
+                builder: (context, tableConstraints) {
+                  final tableWidth = tableConstraints.maxWidth < 800
+                      ? 800.0
+                      : tableConstraints.maxWidth;
+
+                  return Scrollbar(
+                    controller: _tableController,
+                    thumbVisibility: true,
+                    scrollbarOrientation: ScrollbarOrientation.bottom,
+                    child: SingleChildScrollView(
+                      controller: _tableController,
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: SizedBox(
+                        width: tableWidth,
+                        child: HeadTable(
+                          columns: const [
+                            HeadColumn('Incident / vehicle', flex: 3),
+                            HeadColumn('Violation', flex: 2),
+                            HeadColumn('Date / time', flex: 2),
+                            HeadColumn('Location', flex: 2),
+                            HeadColumn('Reported by', flex: 2),
+                            HeadColumn('Status', flex: 2),
+                          ],
+                          selectedIndex: selectedIndex >= 0
+                              ? selectedIndex
+                              : null,
+                          onRowTap: (i) => setState(
+                            () => _selectedId = filtered[i].incidentNumber,
+                          ),
+                          emptyText: 'No violations match your search.',
+                          rows: [
+                            for (final v in filtered)
+                              [
+                                TwoLineCell(v.plate, v.incidentNumber),
+                                Text(
+                                  v.type,
+                                  style: const TextStyle(fontSize: 13),
+                                ),
+                                Text(
+                                  v.reportedAt,
+                                  style: const TextStyle(fontSize: 12.5),
+                                ),
+                                Text(v.detectedAreaId, style: monoStyle),
+                                Text(
+                                  v.reportedBy,
+                                  style: const TextStyle(fontSize: 12.5),
+                                ),
+                                StatusPill(
+                                  label: violationLabel(v.status),
+                                  color: violationColor(v.status),
+                                ),
+                              ],
+                          ],
                         ),
-                        Text(v.detectedAreaId, style: monoStyle),
-                        Text(
-                          v.reportedBy,
-                          style: const TextStyle(fontSize: 12.5),
-                        ),
-                        StatusPill(
-                          label: violationLabel(v.status),
-                          color: violationColor(v.status),
-                        ),
-                      ],
-                  ],
-                ),
+                      ),
+                    ),
+                  );
+                },
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              flex: 2,
-              child: selected == null
-                  ? const Panel(
-                      title: 'Selected incident',
-                      child: Text('Select a violation from the list.'),
-                    )
-                  : _detailPanels(selected),
-            ),
-          ],
+            );
+
+            final detailPanel = selected == null
+                ? const Panel(
+                    title: 'Selected incident',
+                    child: Text('Select a violation from the list.'),
+                  )
+                : _detailPanels(selected);
+
+            if (constraints.maxWidth < 900) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [tablePanel, const SizedBox(height: 16), detailPanel],
+              );
+            }
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 3, child: tablePanel),
+                const SizedBox(width: 16),
+                Expanded(flex: 2, child: detailPanel),
+              ],
+            );
+          },
         ),
       ],
     );

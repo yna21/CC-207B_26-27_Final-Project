@@ -25,14 +25,18 @@ class _HeadShellState extends State<HeadShell> {
   late int _index = widget.initialIndex;
 
   // One page per sidebar item, in the same order as the destinations below.
-  final List<Widget> _pages = const [
-    CentralOverviewScreen(),
-    VehicleDatabaseScreen(),
-    ParkingMonitoringScreen(),
-    ViolationManagementScreen(),
-    YellowPassScreen(),
-    OutsideVehiclesScreen(),
+  late final List<Widget> _pages = [
+    CentralOverviewScreen(onNavigate: _navigateTo),
+    const VehicleDatabaseScreen(),
+    const ParkingMonitoringScreen(),
+    const ViolationManagementScreen(),
+    const YellowPassScreen(),
+    const OutsideVehiclesScreen(),
   ];
+
+  void _navigateTo(int index) {
+    setState(() => _index = index);
+  }
 
   // Icon with an optional red badge (used for open violations).
   Widget _icon(IconData icon, {int badge = 0}) =>
@@ -55,7 +59,7 @@ class _HeadShellState extends State<HeadShell> {
               NavigationRail(
                 extended: !compact,
                 minExtendedWidth: 260,
-                minWidth: 72,
+                minWidth: compact ? 56 : 72,
                 backgroundColor: AppColors.sidebar,
                 indicatorColor: AppColors.action,
                 indicatorShape: RoundedRectangleBorder(
