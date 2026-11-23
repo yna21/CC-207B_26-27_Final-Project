@@ -1,20 +1,24 @@
-/// Every screen name in WEBSUPARK, in one place.
-/// Rule for the whole team: never type a route string by hand.
-/// Always use AppRoutes.something, so a typo becomes a compile error
-/// instead of a button that silently goes nowhere.
+import 'package:websupark/models/app_user.dart';
+
 class AppRoutes {
   AppRoutes._();
 
-  // Entry point of the app.
   static const String root = '/';
 
-  // Driver interface (mobile). The first five are the bottom-navigation tabs.
+  // Sign in and sign up.
+  static const String login = '/login';
+  static const String signUp = '/sign-up';
+
+  // Development shortcuts (reachable only in debug mode).
+  static const String devLauncher = '/dev';
+
+  // Driver interface (mobile).
   static const String driverHome = '/driver/home';
   static const String driverAssignment = '/driver/assignment';
   static const String driverAlerts = '/driver/alerts';
   static const String driverViolations = '/driver/violations';
   static const String driverVehicle = '/driver/vehicle';
-  // Vehicle pass renewal: 3 steps, then a confirmation screen.
+  // Vehicle pass renewal.
   static const String driverRenewalPayment = '/driver/renewal/payment';
   static const String driverRenewalDetails = '/driver/renewal/details';
   static const String driverRenewalReview = '/driver/renewal/review';
@@ -29,11 +33,16 @@ class AppRoutes {
   static const String guardReportSubmitted = '/guard/report-submitted';
 
   // Head security interface (desktop). These are the sidebar pages.
-  // Entrance Monitoring is intentionally left out (hidden for now).
   static const String headOverview = '/head/overview';
   static const String headVehicles = '/head/vehicles';
   static const String headParking = '/head/parking';
   static const String headViolations = '/head/violations';
   static const String headYellowPass = '/head/yellow-pass';
   static const String headOutsideVehicles = '/head/outside-vehicles';
+
+  static String homeForRole(UserRole role) => switch (role) {
+        UserRole.driver => driverHome,
+        UserRole.guard => guardConsole,
+        UserRole.headSecurity => headOverview,
+      };
 }

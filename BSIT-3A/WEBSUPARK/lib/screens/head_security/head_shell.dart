@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:websupark/screens/head_security/h1_central_overview_screen.dart';
+import 'package:websupark/screens/head_security/h2_vehicle_database_screen.dart';
+import 'package:websupark/screens/head_security/h3_parking_monitoring_screen.dart';
+import 'package:websupark/screens/head_security/h4_violation_management_screen.dart';
+import 'package:websupark/screens/head_security/h5_yellow_pass_screen.dart';
+import 'package:websupark/screens/head_security/h6_outside_vehicles_screen.dart';
+import 'package:websupark/screens/head_security/head_sample_data.dart';
 import 'package:websupark/theme/app_colors.dart';
-import 'package:websupark/widgets/placeholder_page.dart';
 
 /// Frame of the head-security interface: a dark sidebar on the left
 /// and the selected page on the right (desktop layout).
-/// The head-security owner replaces each PlaceholderPage with the real
-/// screen (H1 to H6 in the prototype checklist).
 class HeadShell extends StatefulWidget {
   const HeadShell({super.key, this.initialIndex = 0});
 
@@ -22,109 +26,249 @@ class _HeadShellState extends State<HeadShell> {
 
   // One page per sidebar item, in the same order as the destinations below.
   final List<Widget> _pages = const [
-    PlaceholderPage(
-      title: 'Central Overview',
-      screenCode: 'H1',
-      owner: 'Head security owner',
-    ),
-    PlaceholderPage(
-      title: 'Vehicle Database',
-      screenCode: 'H2',
-      owner: 'Head security owner',
-    ),
-    PlaceholderPage(
-      title: 'Parking Monitoring',
-      screenCode: 'H3',
-      owner: 'Head security owner',
-    ),
-    PlaceholderPage(
-      title: 'Violation Management',
-      screenCode: 'H4',
-      owner: 'Head security owner',
-    ),
-    PlaceholderPage(
-      title: 'Yellow Pass Monitoring',
-      screenCode: 'H5',
-      owner: 'Head security owner',
-    ),
-    PlaceholderPage(
-      title: 'Outside Vehicles',
-      screenCode: 'H6',
-      owner: 'Head security owner',
-    ),
+    CentralOverviewScreen(),
+    VehicleDatabaseScreen(),
+    ParkingMonitoringScreen(),
+    ViolationManagementScreen(),
+    YellowPassScreen(),
+    OutsideVehiclesScreen(),
   ];
+
+  // Icon with an optional red badge (used for open violations).
+  Widget _icon(IconData icon, {int badge = 0}) =>
+      badge > 0 ? Badge(label: Text('$badge'), child: Icon(icon)) : Icon(icon);
 
   @override
   Widget build(BuildContext context) {
+    final openCount = sampleViolations
+        .where((v) => v.status != ViolationStatus.resolved)
+        .length;
+
     return Scaffold(
-      body: Row(
-        children: [
-          // Sidebar. "extended" shows the text labels next to the icons.
-          NavigationRail(
-            extended: true,
-            minExtendedWidth: 250,
-            backgroundColor: AppColors.sidebar,
-            indicatorColor: AppColors.action,
-            selectedIndex: _index,
-            onDestinationSelected: (i) => setState(() => _index = i),
-            selectedIconTheme: const IconThemeData(color: Colors.white),
-            unselectedIconTheme: const IconThemeData(color: Colors.white70),
-            selectedLabelTextStyle: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 900;
+          final shortScreen = constraints.maxHeight < 650;
+
+          return Row(
+            children: [
+              NavigationRail(
+                extended: !compact,
+                minExtendedWidth: 260,
+                minWidth: 72,
+                backgroundColor: AppColors.sidebar,
+                indicatorColor: AppColors.action,
+                indicatorShape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                selectedIndex: _index,
+                onDestinationSelected: (i) {
+                  setState(() => _index = i);
+                },
+                selectedIconTheme: const IconThemeData(color: Colors.white),
+                unselectedIconTheme: const IconThemeData(color: Colors.white70),
+                selectedLabelTextStyle: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+                unselectedLabelTextStyle: const TextStyle(
+                  color: Colors.white70,
+                ),
+                leading: compact
+                    ? const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 24, 16, 16),
+                        child: Icon(Icons.shield_outlined, color: Colors.white),
+                      )
+                    : shortScreen
+                    ? null
+                    : const _SidebarHeader(),
+                trailing: compact || shortScreen ? null : const _SidebarUser(),
+                destinations: [
+                  NavigationRailDestination(
+                    icon: _icon(Icons.dashboard_outlined),
+                    label: const Text('Central Overview'),
+                  ),
+                  NavigationRailDestination(
+                    icon: _icon(Icons.directions_car_outlined),
+                    label: const Text('Vehicle Database'),
+                  ),
+                  NavigationRailDestination(
+                    icon: _icon(Icons.map_outlined),
+                    label: const Text('Parking Monitoring'),
+                  ),
+                  NavigationRailDestination(
+                    icon: _icon(Icons.warning_amber_outlined, badge: openCount),
+                    label: const Text('Violation Management'),
+                  ),
+                  NavigationRailDestination(
+                    icon: _icon(Icons.schedule),
+                    label: const Text('Yellow Pass Monitoring'),
+                  ),
+                  NavigationRailDestination(
+                    icon: _icon(Icons.local_shipping_outlined),
+                    label: const Text('Outside Vehicles'),
+                  ),
+                ],
+              ),
+              Expanded(
+                child: IndexedStack(index: _index, children: _pages),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _SidebarHeader extends StatelessWidget {
+  const _SidebarHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 260,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: AppColors.action,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.shield_outlined,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'MAIN GATE',
+                      style: TextStyle(color: Colors.white54, fontSize: 10.5),
+                    ),
+                    Text(
+                      'Security Command',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            unselectedLabelTextStyle: const TextStyle(color: Colors.white70),
-            // Title block at the top of the sidebar.
-            leading: const Padding(
-              padding: EdgeInsets.fromLTRB(16, 24, 16, 24),
-              child: Column(
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.white12),
+              ),
+              child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'MAIN GATE',
-                    style: TextStyle(color: Colors.white54, fontSize: 11),
+                  Row(
+                    children: [
+                      Text(
+                        'SITE STATUS',
+                        style: TextStyle(
+                          color: Colors.white54,
+                          fontSize: 10,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                      Spacer(),
+                      Icon(Icons.circle, size: 7, color: AppColors.success),
+                      SizedBox(width: 4),
+                      Text(
+                        'SAMPLE',
+                        style: TextStyle(
+                          color: AppColors.success,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
+                  SizedBox(height: 6),
                   Text(
-                    'Security Command',
+                    'Main Gate · All areas',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
               ),
             ),
-            destinations: const [
-              NavigationRailDestination(
-                icon: Icon(Icons.dashboard_outlined),
-                label: Text('Central Overview'),
+            const SizedBox(height: 20),
+            const Text(
+              'OPERATIONS',
+              style: TextStyle(
+                color: Colors.white54,
+                fontSize: 10.5,
+                letterSpacing: 0.8,
               ),
-              NavigationRailDestination(
-                icon: Icon(Icons.directions_car_outlined),
-                label: Text('Vehicle Database'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SidebarUser extends StatelessWidget {
+  const _SidebarUser();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 24),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: AppColors.action,
+            child: Text(
+              'AR',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
               ),
-              NavigationRailDestination(
-                icon: Icon(Icons.map_outlined),
-                label: Text('Parking Monitoring'),
+            ),
+          ),
+          SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Alfaro',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              NavigationRailDestination(
-                icon: Icon(Icons.warning_amber_outlined),
-                label: Text('Violation Management'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.schedule),
-                label: Text('Yellow Pass Monitoring'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.local_shipping_outlined),
-                label: Text('Outside Vehicles'),
+              Text(
+                'Chief Security Officer',
+                style: TextStyle(color: Colors.white54, fontSize: 11),
               ),
             ],
           ),
-          // The selected page fills the rest of the window.
-          // IndexedStack keeps every page alive when switching.
-          Expanded(child: IndexedStack(index: _index, children: _pages)),
         ],
       ),
     );
