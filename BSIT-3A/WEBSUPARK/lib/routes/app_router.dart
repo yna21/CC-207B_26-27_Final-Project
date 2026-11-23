@@ -1,6 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:websupark/routes/app_routes.dart';
 import 'package:websupark/screens/driver/driver_shell.dart';
+import 'package:websupark/screens/driver/renewal_details_screen.dart';
+import 'package:websupark/screens/driver/renewal_payment_screen.dart';
+import 'package:websupark/screens/driver/renewal_review_screen.dart';
+import 'package:websupark/screens/driver/renewal_submitted_screen.dart';
 import 'package:websupark/screens/guard/guard_flow_screen.dart';
 import 'package:websupark/screens/head_security/head_shell.dart';
 /// Connects each route name (from AppRoutes) to the screen it opens.
@@ -15,6 +19,12 @@ class AppRouter {
     AppRoutes.driverAlerts: (_) => const DriverShell(initialIndex: 2),
     AppRoutes.driverViolations: (_) => const DriverShell(initialIndex: 3),
     AppRoutes.driverVehicle: (_) => const DriverShell(initialIndex: 4),
+
+    // Driver: vehicle pass renewal (steps 1 to 3, then confirmation).
+    AppRoutes.driverRenewalPayment: (_) => const RenewalPaymentScreen(),
+    AppRoutes.driverRenewalDetails: (_) => const RenewalDetailsScreen(),
+    AppRoutes.driverRenewalReview: (_) => const RenewalReviewScreen(),
+    AppRoutes.driverRenewalSubmitted: (_) => const RenewalSubmittedScreen(),
 
     // Guard: a chain of screens S1 to S6. Each temporary button
     // points to the next screen in the prototype flow.

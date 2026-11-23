@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:websupark/routes/app_routes.dart';
+import 'package:websupark/screens/driver/driver_common.dart';
 import 'package:websupark/screens/driver/renewal_common.dart';
 import 'package:websupark/theme/app_colors.dart';
 
@@ -46,39 +47,46 @@ class _RenewalReviewScreenState extends State<RenewalReviewScreen> {
           subtitle: 'Make sure the information below is correct before submitting.',
         ),
         const SizedBox(height: 18),
-        const RenewalRowsCard(
-          rows: [
-            RenewalRow('Vehicle', renewalVehicle),
-            RenewalRow('Plate number', renewalPlate),
-            RenewalRow('Current pass', renewalPass),
-            RenewalRow('Valid until', renewalValidUntil),
-            RenewalRow('Payment', 'At Cashier'),
-            RenewalRow('Renewal fee', renewalFee),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Checkbox(
-              value: _confirmed,
-              visualDensity: VisualDensity.compact,
-              onChanged: (value) => setState(() => _confirmed = value ?? false),
+        // Two columns on a wide screen, one column (same order) on a phone.
+        DriverColumns(
+          gap: 10,
+          left: [
+            const RenewalRowsCard(
+              rows: [
+                RenewalRow('Vehicle', renewalVehicle),
+                RenewalRow('Plate number', renewalPlate),
+                RenewalRow('Current pass', renewalPass),
+                RenewalRow('Valid until', renewalValidUntil),
+                RenewalRow('Payment', 'At Cashier'),
+                RenewalRow('Renewal fee', renewalFee),
+              ],
             ),
-            const Expanded(
-              child: Text(
-                'I confirm that the information provided is accurate and complete.',
-                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+          ],
+          right: [
+            Row(
+              children: [
+                Checkbox(
+                  value: _confirmed,
+                  visualDensity: VisualDensity.compact,
+                  onChanged: (value) => setState(() => _confirmed = value ?? false),
+                ),
+                const Expanded(
+                  child: Text(
+                    'I confirm that the information provided is accurate and complete.',
+                    style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _confirmed ? _submit : null,
+                child: const Text('Submit renewal'),
               ),
             ),
           ],
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _confirmed ? _submit : null,
-            child: const Text('Submit renewal'),
-          ),
         ),
       ],
     );

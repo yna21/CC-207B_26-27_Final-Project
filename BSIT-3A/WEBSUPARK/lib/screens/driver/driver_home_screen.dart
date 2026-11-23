@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:websupark/routes/app_routes.dart';
+import 'package:websupark/screens/driver/driver_common.dart';
 import 'package:websupark/theme/app_colors.dart';
 import 'package:websupark/widgets/status_chip.dart';
 
@@ -72,134 +73,38 @@ String _greeting() {
   return 'Good Evening';
 }
 
-// Small gray caps label used above some values, e.g. "YOUR VEHICLE".
-const TextStyle _labelStyle = TextStyle(
-  fontSize: 10,
-  fontWeight: FontWeight.w600,
-  letterSpacing: 0.8,
-  color: AppColors.textMuted,
-);
-
 /// D1 Home: greeting, the driver's vehicle, and live parking availability.
 class DriverHomeScreen extends StatelessWidget {
   const DriverHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const _Header(),
-          const SizedBox(height: 16),
-          const _VehicleCard(),
-          const SizedBox(height: 20),
-          const _SectionHeader(
-            title: 'Parking Availability',
-            action: 'Live status',
-          ),
-          const SizedBox(height: 10),
-          const _AssignedAreaCard(),
-          const SizedBox(height: 20),
-          const _SectionHeader(title: 'Other Areas', action: 'Updated now'),
-          const SizedBox(height: 10),
-          const _OtherAreasCard(),
-        ],
-      ),
-    );
-  }
-}
-
-/// Greeting on the left, notification bell on the right.
-class _Header extends StatelessWidget {
-  const _Header();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
+    return DriverPage(
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${_greeting()}, $_driverName!',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 2),
-              const Text(
-                'University Parking Services',
-                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-              ),
-            ],
-          ),
-        ),
-        _IconBox(
+        DriverHeader(
+          title: '${_greeting()}, $_driverName!',
+          subtitle: 'University Parking Services',
           icon: Icons.notifications_none,
-          onTap: () => Navigator.pushNamed(context, AppRoutes.driverAlerts),
+          onIconTap: () => Navigator.pushNamed(context, AppRoutes.driverAlerts),
         ),
-      ],
-    );
-  }
-}
-
-/// Rounded pale-blue square holding an icon (bell, car, ...).
-class _IconBox extends StatelessWidget {
-  const _IconBox({required this.icon, this.onTap});
-
-  final IconData icon;
-  final VoidCallback? onTap; // null = not tappable
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.primary.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: SizedBox(
-          width: 40,
-          height: 40,
-          child: Icon(icon, size: 20, color: AppColors.primary),
-        ),
-      ),
-    );
-  }
-}
-
-/// Title on the left, small blue link-style text on the right.
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, required this.action});
-
-  final String title;
-  final String action;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        Text(
-          action,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: AppColors.primary,
-          ),
+        const SizedBox(height: 16),
+        // Two columns on a wide screen, one column (same order) on a phone.
+        const DriverColumns(
+          left: [
+            _VehicleCard(),
+            SizedBox(height: 20),
+            DriverSectionHeader(
+              title: 'Parking Availability',
+              action: 'Live status',
+            ),
+            SizedBox(height: 10),
+            _AssignedAreaCard(),
+          ],
+          right: [
+            DriverSectionHeader(title: 'Other Areas', action: 'Updated now'),
+            SizedBox(height: 10),
+            _OtherAreasCard(),
+          ],
         ),
       ],
     );
@@ -218,13 +123,14 @@ class _VehicleCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         child: Row(
           children: [
-            const _IconBox(icon: Icons.directions_car_outlined),
+            const DriverIconBox(icon: Icons.directions_car_outlined),
             const SizedBox(width: 12),
+            // Expanded: the text takes the free space and wraps if needed.
             const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('YOUR VEHICLE', style: _labelStyle),
+                  Text('YOUR VEHICLE', style: driverLabelStyle),
                   SizedBox(height: 2),
                   Text(
                     _vehicleName,
@@ -279,7 +185,7 @@ class _AssignedAreaCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('YOUR ASSIGNED AREA', style: _labelStyle),
+                      Text('YOUR ASSIGNED AREA', style: driverLabelStyle),
                       SizedBox(height: 2),
                       Text(
                         _assignedAreaName,
@@ -292,34 +198,47 @@ class _AssignedAreaCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                StatusChip(label: _labelFor(_availableSpaces).toUpperCase(), kind: kind),
+                const SizedBox(width: 8),
+                StatusChip(
+                  label: _labelFor(_availableSpaces).toUpperCase(),
+                  kind: kind,
+                ),
               ],
             ),
             const SizedBox(height: 12),
 
-            // Middle row: big free-space number, and occupied / capacity.
+            // Middle row: big free-space number on the left (it may shrink),
+            // occupied / capacity on the right.
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  '$_availableSpaces',
-                  style: TextStyle(
-                    fontSize: 40,
-                    fontWeight: FontWeight.w600,
-                    height: 1,
-                    color: color,
+                Expanded(
+                  child: Row(
+                    children: [
+                      Text(
+                        '$_availableSpaces',
+                        style: TextStyle(
+                          fontSize: 40,
+                          fontWeight: FontWeight.w600,
+                          height: 1,
+                          color: color,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Flexible(
+                        child: Text(
+                          'spaces\ncurrently\navailable',
+                          style: TextStyle(
+                            fontSize: 11,
+                            height: 1.2,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'spaces\ncurrently\navailable',
-                  style: TextStyle(
-                    fontSize: 11,
-                    height: 1.2,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-                const Spacer(),
                 const Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -367,14 +286,16 @@ class _AssignedAreaCard extends StatelessWidget {
                 children: [
                   Icon(Icons.local_parking, size: 18, color: AppColors.primary),
                   SizedBox(width: 8),
-                  Text(
-                    'Your Assigned Area:',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textPrimary,
+                  Expanded(
+                    child: Text(
+                      'Your Assigned Area:',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
-                  Spacer(),
+                  SizedBox(width: 8),
                   Text(
                     _assignedSlot,
                     style: TextStyle(
@@ -462,13 +383,19 @@ class _AreaRow extends StatelessWidget {
           ),
           Expanded(
             flex: 3,
-            child: Text(
-              _labelFor(area.availableSpaces),
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: color,
+            // FittedBox shrinks "Almost Full" instead of letting it overflow.
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  _labelFor(area.availableSpaces),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: color,
+                  ),
+                ),
               ),
             ),
           ),

@@ -57,20 +57,26 @@ class DriverViolationsScreen extends StatelessWidget {
           icon: Icons.help_outline,
         ),
         const SizedBox(height: 16),
-        const _SummaryCard(),
-        const SizedBox(height: 20),
-        const DriverSectionHeader(
-          title: 'Violation History',
-          action: _schoolYear,
+        // Two columns on a wide screen, one column (same order) on a phone.
+        DriverColumns(
+          leftFlex: 2,
+          rightFlex: 3,
+          left: const [_SummaryCard()],
+          right: [
+            const DriverSectionHeader(
+              title: 'Violation History',
+              action: _schoolYear,
+            ),
+            const SizedBox(height: 10),
+            for (final violation in _violations)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _ViolationCard(violation: violation),
+              ),
+            const SizedBox(height: 2),
+            const _ClarifyNote(),
+          ],
         ),
-        const SizedBox(height: 10),
-        for (final violation in _violations)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: _ViolationCard(violation: violation),
-          ),
-        const SizedBox(height: 2),
-        const _ClarifyNote(),
       ],
     );
   }
@@ -162,6 +168,7 @@ class _SummaryStat extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 9,
               letterSpacing: 0.6,
