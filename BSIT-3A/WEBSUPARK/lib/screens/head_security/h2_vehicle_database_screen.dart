@@ -11,6 +11,8 @@ class VehicleDatabaseScreen extends StatefulWidget {
 }
 
 class _VehicleDatabaseScreenState extends State<VehicleDatabaseScreen> {
+  final ScrollController _tableController = ScrollController();
+
   String _query = '';
   String? _passType; // null means "All pass types"
   String _entry = 'All'; // All, Inside or Outside
@@ -39,6 +41,12 @@ class _VehicleDatabaseScreenState extends State<VehicleDatabaseScreen> {
       final matchesEntry = _entry == 'All' || (_entry == 'Inside') == v.inside;
       return matchesText && matchesType && matchesEntry;
     }).toList();
+  }
+
+  @override
+  void dispose() {
+    _tableController.dispose();
+    super.dispose();
   }
 
   @override
@@ -88,15 +96,17 @@ class _VehicleDatabaseScreenState extends State<VehicleDatabaseScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        Row(
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
           children: [
-            Expanded(
+            SizedBox(
+              width: 260,
               child: HeadSearchField(
                 hint: 'Search plate, driver, pass number, area...',
                 onChanged: (value) => setState(() => _query = value),
               ),
             ),
-            const SizedBox(width: 12),
             HeadDropdown<String>(
               value: _entry,
               width: 130,
@@ -107,7 +117,6 @@ class _VehicleDatabaseScreenState extends State<VehicleDatabaseScreen> {
               ],
               onChanged: (value) => setState(() => _entry = value ?? 'All'),
             ),
-            const SizedBox(width: 12),
             HeadDropdown<String?>(
               value: _passType,
               width: 240,
@@ -132,47 +141,57 @@ class _VehicleDatabaseScreenState extends State<VehicleDatabaseScreen> {
           style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5),
         ),
         const SizedBox(height: 8),
-        HeadTable(
-          columns: const [
-            HeadColumn('Driver information', flex: 3),
-            HeadColumn('Vehicle information', flex: 3),
-            HeadColumn('Pass number', flex: 2),
-            HeadColumn('Parking', flex: 1),
-            HeadColumn('Expiration', flex: 2),
-            HeadColumn('Entry status', flex: 3),
-            HeadColumn('Last activity', flex: 3),
-          ],
-          warningRows: warningRows,
-          emptyText: 'No vehicles match your search.',
-          rows: [
-            for (final v in results)
-              [
-                TwoLineCell(v.driver, v.mobile),
-                TwoLineCell(v.plate, v.makeModel, mono: true),
-                Text(v.passNumber, style: monoStyle),
-                Text(v.areaId, style: monoStyle),
-                Text(
-                  formatDate(v.validUntil),
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: v.expired ? AppColors.danger : AppColors.textPrimary,
-                  ),
-                ),
-                StatusPill(label: _status(v).$1, color: _status(v).$2),
-                Text(
-                  v.lastActivity,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ],
-          ],
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'Showing ${results.length} of ${sampleVehicles.length} registered vehicles',
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5),
+        Scrollbar(
+          controller: _tableController,
+          thumbVisibility: true,
+          scrollbarOrientation: ScrollbarOrientation.bottom,
+          child: SingleChildScrollView(
+            controller: _tableController,
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.only(bottom: 12),
+            child: SizedBox(
+              width: 900,
+              child: HeadTable(
+                columns: const [
+                  HeadColumn('Driver information', flex: 3),
+                  HeadColumn('Vehicle information', flex: 3),
+                  HeadColumn('Pass number', flex: 2),
+                  HeadColumn('Parking', flex: 1),
+                  HeadColumn('Expiration', flex: 2),
+                  HeadColumn('Entry status', flex: 3),
+                  HeadColumn('Last activity', flex: 3),
+                ],
+                warningRows: warningRows,
+                emptyText: 'No vehicles match your search.',
+                rows: [
+                  for (final v in results)
+                    [
+                      TwoLineCell(v.driver, v.mobile),
+                      TwoLineCell(v.plate, v.makeModel, mono: true),
+                      Text(v.passNumber, style: monoStyle),
+                      Text(v.areaId, style: monoStyle),
+                      Text(
+                        formatDate(v.validUntil),
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: v.expired
+                              ? AppColors.danger
+                              : AppColors.textPrimary,
+                        ),
+                      ),
+                      StatusPill(label: _status(v).$1, color: _status(v).$2),
+                      Text(
+                        v.lastActivity,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                ],
+              ),
+            ),
+          ),
         ),
       ],
     );

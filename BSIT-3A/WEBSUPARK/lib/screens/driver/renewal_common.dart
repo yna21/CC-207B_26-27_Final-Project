@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:websupark/screens/driver/driver_common.dart';
 import 'package:websupark/theme/app_colors.dart';
-import 'package:websupark/widgets/phone_frame.dart';
 
 // ---------------------------------------------------------------------------
 // SAMPLE DATA shared by the renewal screens (layout only)
@@ -24,6 +23,7 @@ class RenewalScaffold extends StatelessWidget {
     required this.icon,
     required this.children,
     this.step,
+    this.contentMaxWidth,
   });
 
   final String title;
@@ -34,66 +34,112 @@ class RenewalScaffold extends StatelessWidget {
   /// Current step (1 to 3). Null hides the progress bar.
   final int? step;
 
+  /// Optional: keeps the content in a narrower centered column on wide
+  /// screens (used by the confirmation screen).
+  final double? contentMaxWidth;
+
   @override
   Widget build(BuildContext context) {
-    return PhoneFrame(
+    final pageColor = Theme.of(context).scaffoldBackgroundColor;
+    final maxContent = contentMaxWidth;
+
+    return DriverTextScale(
       child: Scaffold(
         body: SafeArea(
-          child: Column(
-            children: [
-              // Header: back arrow, title and subtitle, icon button.
-              Container(
-                color: AppColors.surface,
-                padding: const EdgeInsets.fromLTRB(4, 8, 16, 8),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, size: 20),
-                      color: AppColors.textPrimary,
-                      onPressed: () => Navigator.maybePop(context),
-                    ),
-                    Expanded(
+          // Gray backdrop. On a wide window the page is a centered panel.
+          child: ColoredBox(
+            color: AppColors.border,
+            child: LayoutBuilder(
+              builder: (context, outer) {
+                final wide = outer.maxWidth >= driverWideBreakpoint;
+                return Center(
+                  child: ConstrainedBox(
+                    // phone: full width, tablet: up to 560, desktop: up to 760
+                    constraints: BoxConstraints(maxWidth: wide ? 760 : 560),
+                    child: ColoredBox(
+                      color: pageColor,
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
+                          // Header: back arrow, title and subtitle, icon button.
+                          Container(
+                            color: AppColors.surface,
+                            padding: const EdgeInsets.fromLTRB(4, 8, 16, 8),
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.arrow_back, size: 20),
+                                  color: AppColors.textPrimary,
+                                  onPressed: () => Navigator.maybePop(context),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        title,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                      Text(
+                                        subtitle,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.textMuted,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                DriverIconBox(icon: icon, size: 36),
+                              ],
                             ),
                           ),
-                          Text(
-                            subtitle,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textMuted,
+                          Expanded(
+                            // The side padding follows the width of the panel.
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final w = constraints.maxWidth;
+                                final side =
+                                    w < 360 ? 12.0 : (w >= 640 ? 24.0 : 16.0);
+                                final content = Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (step != null) ...[
+                                      _StepProgress(step: step!),
+                                      const SizedBox(height: 22),
+                                    ],
+                                    ...children,
+                                  ],
+                                );
+                                return SingleChildScrollView(
+                                  padding: EdgeInsets.fromLTRB(side, 12, side, 24),
+                                  child: maxContent == null
+                                      ? content
+                                      : Center(
+                                          child: ConstrainedBox(
+                                            constraints: BoxConstraints(
+                                              maxWidth: maxContent,
+                                            ),
+                                            child: SizedBox(
+                                              width: double.infinity,
+                                              child: content,
+                                            ),
+                                          ),
+                                        ),
+                                );
+                              },
                             ),
                           ),
                         ],
                       ),
                     ),
-                    DriverIconBox(icon: icon, size: 36),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (step != null) ...[
-                        _StepProgress(step: step!),
-                        const SizedBox(height: 22),
-                      ],
-                      ...children,
-                    ],
                   ),
-                ),
-              ),
-            ],
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -185,27 +231,10 @@ class RenewalRowsCard extends StatelessWidget {
             for (var i = 0; i < rows.length; i++) ...[
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        rows[i].label,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ),
-                    rows[i].trailing ??
-                        Text(
-                          rows[i].value,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                  ],
+                child: DriverInfoRow(
+                  label: rows[i].label,
+                  value: rows[i].value,
+                  trailing: rows[i].trailing,
                 ),
               ),
               if (i != rows.length - 1)

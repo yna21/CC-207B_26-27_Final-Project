@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:websupark/routes/app_routes.dart';
+import 'package:websupark/screens/driver/driver_common.dart';
 import 'package:websupark/screens/driver/renewal_common.dart';
 import 'package:websupark/theme/app_colors.dart';
 
@@ -89,32 +90,37 @@ class _RenewalDetailsScreenState extends State<RenewalDetailsScreen> {
           subtitle: 'Confirm your visit details before submitting.',
         ),
         const SizedBox(height: 18),
-        const _VisitCard(),
-        const SizedBox(height: 18),
-        const Text(
-          'Preferred visit date',
-          style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-        ),
-        const SizedBox(height: 6),
-        TextField(
-          controller: _dateController,
-          readOnly: true, // the date comes from the picker, not the keyboard
-          onTap: _pickDate,
-          decoration: InputDecoration(
-            hintText: 'Select a date',
-            errorText: _error,
-            suffixIcon: const Icon(Icons.calendar_today_outlined, size: 18),
-          ),
-        ),
-        const SizedBox(height: 14),
-        const _WhatToBring(),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _review,
-            child: const Text('Review renewal'),
-          ),
+        // Two columns on a wide screen, one column (same order) on a phone.
+        DriverColumns(
+          gap: 18,
+          left: const [_VisitCard()],
+          right: [
+            const Text(
+              'Preferred visit date',
+              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+            ),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _dateController,
+              readOnly: true, // the date comes from the picker, not the keyboard
+              onTap: _pickDate,
+              decoration: InputDecoration(
+                hintText: 'Select a date',
+                errorText: _error,
+                suffixIcon: const Icon(Icons.calendar_today_outlined, size: 18),
+              ),
+            ),
+            const SizedBox(height: 14),
+            const _WhatToBring(),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _review,
+                child: const Text('Review renewal'),
+              ),
+            ),
+          ],
         ),
       ],
     );

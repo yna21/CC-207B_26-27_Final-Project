@@ -211,12 +211,18 @@ class HeadPage extends StatelessWidget {
           },
         ),
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: children,
-            ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final padding = constraints.maxWidth < 600 ? 12.0 : 24.0;
+
+              return SingleChildScrollView(
+                padding: EdgeInsets.all(padding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: children,
+                ),
+              );
+            },
           ),
         ),
       ],
@@ -280,7 +286,15 @@ class Panel extends StatelessWidget {
   final String? title;
   final String? caption; // small muted text on the right of the title
   final Widget child;
-  const Panel({super.key, this.title, this.caption, required this.child});
+  final VoidCallback? onTap;
+
+  const Panel({
+    super.key,
+    this.title,
+    this.caption,
+    this.onTap,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -290,39 +304,43 @@ class Panel extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         side: const BorderSide(color: AppColors.border),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (title != null) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      title!.toUpperCase(),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                        letterSpacing: 0.6,
-                        color: AppColors.textPrimary,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (title != null) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title!.toUpperCase(),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          letterSpacing: 0.6,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ),
-                  ),
-                  if (caption != null)
-                    Text(
-                      caption!,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textMuted,
+                    if (caption != null)
+                      Text(
+                        caption!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textMuted,
+                        ),
                       ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 14),
+                  ],
+                ),
+                const SizedBox(height: 14),
+              ],
+              child,
             ],
-            child,
-          ],
+          ),
         ),
       ),
     );
@@ -364,6 +382,7 @@ class StatCard extends StatelessWidget {
   final String? note;
   final Color? noteColor;
   final Color iconColor;
+  final VoidCallback? onTap;
 
   const StatCard({
     super.key,
@@ -372,12 +391,14 @@ class StatCard extends StatelessWidget {
     required this.value,
     this.note,
     this.noteColor,
+    this.onTap,
     this.iconColor = AppColors.action,
   });
 
   @override
   Widget build(BuildContext context) {
     return Panel(
+      onTap: onTap,
       child: Row(
         children: [
           IconTile(icon: icon, color: iconColor),
@@ -645,83 +666,101 @@ class HeadTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.border),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final table = ClipRRect(
           borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
-          children: [
-            Container(
-              color: AppColors.sidebar,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  for (final c in columns)
-                    Expanded(
-                      flex: c.flex,
-                      child: Text(
-                        c.title.toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.6,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.border),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  color: AppColors.sidebar,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    children: [
+                      for (final c in columns)
+                        Expanded(
+                          flex: c.flex,
+                          child: Text(
+                            c.title.toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                for (var i = 0; i < rows.length; i++)
+                  Material(
+                    color: i == selectedIndex
+                        ? AppColors.action.withValues(alpha: 0.08)
+                        : warningRows.contains(i)
+                        ? AppColors.warningSoft
+                        : AppColors.surface,
+                    child: InkWell(
+                      onTap: onRowTap == null ? null : () => onRowTap!(i),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: const BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(color: AppColors.border),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            for (var j = 0; j < columns.length; j++)
+                              Expanded(
+                                flex: columns[j].flex,
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: rows[i][j],
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ),
-                ],
-              ),
-            ),
-            for (var i = 0; i < rows.length; i++)
-              Material(
-                color: i == selectedIndex
-                    ? AppColors.action.withValues(alpha: 0.08)
-                    : warningRows.contains(i)
-                    ? AppColors.warningSoft
-                    : AppColors.surface,
-                child: InkWell(
-                  onTap: onRowTap == null ? null : () => onRowTap!(i),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: const BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(color: AppColors.border),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        for (var j = 0; j < columns.length; j++)
-                          Expanded(
-                            flex: columns[j].flex,
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: rows[i][j],
-                            ),
-                          ),
-                      ],
+                  ),
+                if (rows.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    color: AppColors.surface,
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      emptyText,
+                      style: const TextStyle(color: AppColors.textMuted),
                     ),
                   ),
-                ),
-              ),
-            if (rows.isEmpty)
-              Container(
-                width: double.infinity,
-                color: AppColors.surface,
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  emptyText,
-                  style: const TextStyle(color: AppColors.textMuted),
-                ),
-              ),
-          ],
-        ),
-      ),
+              ],
+            ),
+          ),
+        );
+
+        if (constraints.maxWidth < 900) {
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(width: 900, child: table),
+          );
+        }
+
+        return table;
+      },
     );
   }
 }
@@ -912,47 +951,82 @@ class ActivityTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = _kindStyle(activity.kind);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 64,
-            child: Text(
-              activity.time,
-              style: const TextStyle(
-                fontSize: 11.5,
-                color: AppColors.textMuted,
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 360) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    activity.title,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                  Text(
+                    activity.detail,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          IconTile(icon: style.$1, color: style.$2, size: 34),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  activity.title,
+          );
+        }
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 14),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 64,
+                child: Text(
+                  activity.time,
                   style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-                Text(
-                  activity.detail,
-                  style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 11.5,
                     color: AppColors.textMuted,
                   ),
                 ),
-              ],
-            ),
+              ),
+              IconTile(icon: style.$1, color: style.$2, size: 34),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      activity.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Text(
+                      activity.detail,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              StatusPill(label: activity.tag, color: style.$2),
+            ],
           ),
-          const SizedBox(width: 8),
-          StatusPill(label: activity.tag, color: style.$2),
-        ],
-      ),
+        );
+      },
     );
   }
 }
