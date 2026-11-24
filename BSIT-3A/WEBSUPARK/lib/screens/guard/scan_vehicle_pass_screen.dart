@@ -7,6 +7,8 @@ import 'package:websupark/screens/guard/data/sample_guard_data.dart';
 import 'package:websupark/routes/app_routes.dart';
 import 'package:websupark/theme/app_colors.dart';
 import 'package:websupark/screens/guard/widgets/dashed_rrect_painter.dart';
+import 'package:websupark/screens/guard/guard_vehicle.dart';
+import 'package:websupark/services/app_services.dart';
 
 /// Shows tappable sample pass numbers in the entry box (for demos and tests).
 /// Set to false when real passes are used.
@@ -54,33 +56,53 @@ class _ScanVehiclePassScreenState extends State<ScanVehiclePassScreen> {
       ),
       builder: (_) => const _PassNumberSheet(),
     );
-    if (result != null) _openRecord(result);
-  }
+  if (result != null) await _openRecord(result);  
+}
 
   /// Also call this from the OCR / camera result later.
-  void _openRecord(String passNumber) {
+  Future<void> _openRecord(String passNumber) async {
     if (!mounted) return;
-    // TODO: replace with repository.findVehicleBy...(passNumber).
-    final found = findVehicleByPassNumber(passNumber);
-    if (found == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No vehicle pass found for $passNumber.')),
+
+    try {
+      // Retrieve the vehicle record from Firestore through the repository.
+      final base = await AppServices.vehicles.findByPassNumber(passNumber);
+
+      if (!mounted) return;
+
+      if (base == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No vehicle pass found for $passNumber.'),
+          ),
+        );
+        return;
+      }
+
+      // Convert the shared VehicleRecord into the Guard-specific model.
+      final found = GuardVehicle(base: base);
+
+      // Preserve violations recorded during the current guard session.
+      final record = found.copyWith(
+        pastViolations: GuardLog.instance.violationsFor(found.plate),
       );
-      return;
+
+      Navigator.pushNamed(
+        context,
+        AppRoutes.guardVehicleRecord,
+        arguments: record,
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to verify pass. Please try again.'),
+        ),
+      );
     }
-    // Add the violations reported in this session to the vehicle's history.
-    final record = found.copyWith(
-      pastViolations: [
-        ...found.pastViolations,
-        ...GuardLog.instance.violationsFor(found.plate),
-      ],
-    );
-    Navigator.pushNamed(
-      context,
-      AppRoutes.guardVehicleRecord,
-      arguments: record,
-    );
   }
+
+
 
   @override
   Widget build(BuildContext context) {

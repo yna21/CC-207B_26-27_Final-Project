@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:websupark/screens/head_security/head_sample_data.dart';
 import 'package:websupark/screens/head_security/head_widgets.dart';
+import 'package:websupark/screens/head_security/live_guard_feed.dart';
 import 'package:websupark/theme/app_colors.dart';
 
 class CentralOverviewScreen extends StatelessWidget {
@@ -173,11 +174,7 @@ class CentralOverviewScreen extends StatelessWidget {
                 Panel(
                   title: 'Real-time field feed',
                   caption: 'Guard activity',
-                  child: Column(
-                    children: [
-                      for (final a in sampleActivities) ActivityTile(a),
-                    ],
-                  ),
+                  child: const GuardActivityFeed(),
                 ),
               ],
             );
