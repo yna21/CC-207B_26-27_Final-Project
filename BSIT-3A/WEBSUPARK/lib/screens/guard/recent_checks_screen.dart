@@ -19,7 +19,10 @@ enum _CheckFilter {
 /// Each vehicle the guard verifies is added here; reported violations show
 /// as REPORTED.
 class RecentChecksScreen extends StatefulWidget {
-  const RecentChecksScreen({super.key});
+  const RecentChecksScreen({super.key, this.embedded = false});
+
+  /// true when shown as a tab of GuardShell (no back button).
+  final bool embedded;
 
   @override
   State<RecentChecksScreen> createState() => _RecentChecksScreenState();
@@ -53,6 +56,7 @@ class _RecentChecksScreenState extends State<RecentChecksScreen> {
           appBar: GuardAppBar(
             title: 'Recent Checks',
             subtitle: '${all.length} CHECKS THIS SHIFT',
+            showBack: !widget.embedded,
           ),
           body: SafeArea(
             child: Column(
@@ -85,8 +89,10 @@ class _RecentChecksScreenState extends State<RecentChecksScreen> {
                       : ListView.separated(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                           itemCount: items.length,
-                          separatorBuilder: (_, _) => const SizedBox(height: 10),
-                          itemBuilder: (_, i) => RecentCheckTile(check: items[i]),
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(height: 10),
+                          itemBuilder: (_, i) =>
+                              RecentCheckTile(check: items[i]),
                         ),
                 ),
               ],

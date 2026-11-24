@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -134,17 +133,22 @@ class _ReportViolationScreenState extends State<ReportViolationScreen> {
       incidentRef: incidentRef,
     );
 
+    final submitted = widget.guardCase.copyWith(
+      incidentRef: incidentRef,
+      syncedAt: formatHm(now),
+      violationType: _type,
+      offenseNumber: offense,
+      notes: _notes.text.trim(),
+      photos: List.of(_photos),
+    );
+
+    // The card in "Recent checks" opens the full incident from this.
+    log.saveCase(submitted);
+
     Navigator.pushReplacementNamed(
       context,
       AppRoutes.guardReportSubmitted,
-      arguments: widget.guardCase.copyWith(
-        incidentRef: incidentRef,
-        syncedAt: formatHm(now),
-        violationType: _type,
-        offenseNumber: offense,
-        notes: _notes.text.trim(),
-        photos: List.of(_photos),
-      ),
+      arguments: submitted,
     );
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:websupark/screens/guard/check_details_screen.dart';
 import 'package:websupark/screens/guard/models/vehicle_check.dart';
 import 'package:websupark/screens/guard/widgets/guard_colors.dart';
 import 'package:websupark/screens/guard/widgets/guard_widgets.dart';
@@ -43,11 +44,14 @@ class RecentCheckTile extends StatelessWidget {
 
     return Card(
       margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
         side: const BorderSide(color: AppColors.border),
       ),
-      child: Padding(
+      child: InkWell(
+        onTap: () => openCheckDetails(context, check),
+        child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
@@ -88,8 +92,12 @@ class RecentCheckTile extends StatelessWidget {
               ),
             ),
             chip,
+            const SizedBox(width: 4),
+            const Icon(Icons.chevron_right,
+                size: 20, color: AppColors.textMuted),
           ],
         ),
+      ),
       ),
     );
   }

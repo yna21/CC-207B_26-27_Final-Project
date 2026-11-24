@@ -47,6 +47,9 @@ class _VerifyParkingScreenState extends State<VerifyParkingScreen> {
           driverName: record.driverName,
           passTypeLabel: record.passType.label,
         );
+
+    // Keep the full case so the card in "Recent checks" can open its details.
+    GuardLog.instance.saveCase(guardCase.copyWith(checkId: _checkId));
   }
 
   void _backToPatrol() => Navigator.of(context).popUntil((route) =>
@@ -72,12 +75,6 @@ class _VerifyParkingScreenState extends State<VerifyParkingScreen> {
       appBar: GuardAppBar(
         title: 'Verify Parking',
         subtitle: 'AREA ${area.id}',
-        actions: [
-          SquareIconButton(
-            icon: Icons.my_location,
-            onTap: () {}, // TODO: refresh location
-          ),
-        ],
       ),
       body: SafeArea(
         child: ScreenBody(

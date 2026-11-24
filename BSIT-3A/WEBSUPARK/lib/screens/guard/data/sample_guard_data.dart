@@ -10,9 +10,8 @@ import 'package:websupark/screens/guard/models/parking_check.dart';
 import 'package:websupark/screens/guard/models/past_violation.dart';
 import 'package:websupark/screens/guard/models/vehicle_check.dart';
 import 'package:websupark/screens/guard/models/violation_type.dart';
+import 'package:websupark/screens/guard/utils/pass_number_validator.dart';
 import 'package:websupark/screens/guard/utils/time_format.dart';
-
-// TODO: all sample data below is replaced by repository data later.
 
 ParkingArea _area(String id) =>
     sampleParkingAreas.firstWhere((a) => a.id == id);
@@ -29,11 +28,18 @@ const sampleRecentChecks = [
 ];
 
 /// Sample vehicle passes, built on the team's Driver / Vehicle / VehiclePass.
-/// Pass numbers are 5 digits, kept as text. Try them in the scan screen:
-///  00921  student pass, assigned P-6, found in P-14   -> mismatch (2nd offense)
-///  00456  faculty pass, assigned P-14, found in P-14  -> cleared
-///  00789  yellow pass (no privilege), 3 past parking violations -> mismatch
-///  00333  parent pass, vehicle has no open entry      -> no open entry
+///
+/// Pass numbers are kept as text and stored WITHOUT a space. The pass prints
+/// "S 123", the app stores "S123" (see PassNumberValidator):
+///   Student / Parent-guardian   S + 3 digits
+///   Faculty / Staff             E + 3 digits
+///   Yellow (no parking)         3 digits
+///
+/// Try them in the scan screen:
+///   S123  student pass, assigned P-6, found in P-14     -> mismatch (2nd offense)
+///   E123  faculty pass, assigned P-14, found in P-14    -> cleared
+///   123   yellow pass (no privilege), 3 past violations -> no assigned area
+///   S124  parent pass, vehicle has no open entry        -> no open entry
 final List<GuardVehicle> sampleVehicles = [
   GuardVehicle(
     base: VehicleRecord(
@@ -43,7 +49,7 @@ final List<GuardVehicle> sampleVehicles = [
           id: 'veh-1', plateNumber: 'ABC-123', makeModel: 'Toyota Camry',
           color: 'Blue', driverId: 'drv-1'),
       pass: VehiclePass(
-        passNumber: '00921',
+        passNumber: 'S123',
         vehicleId: 'veh-1',
         passType: PassType.studentWithParking,
         validUntil: DateTime(2027, 10, 31),
@@ -62,7 +68,7 @@ final List<GuardVehicle> sampleVehicles = [
           id: 'veh-2', plateNumber: 'KJH-482', makeModel: 'Honda City',
           color: 'White', driverId: 'drv-2'),
       pass: VehiclePass(
-        passNumber: '00456',
+        passNumber: 'E123',
         vehicleId: 'veh-2',
         passType: PassType.facultyStaffWithParking,
         validUntil: DateTime(2027, 10, 31),
@@ -78,7 +84,7 @@ final List<GuardVehicle> sampleVehicles = [
           id: 'veh-3', plateNumber: 'NBX-775', makeModel: 'Mitsubishi Mirage',
           color: 'Silver', driverId: 'drv-3'),
       pass: VehiclePass(
-        passNumber: '00789',
+        passNumber: '123',
         vehicleId: 'veh-3',
         passType: PassType.withoutParking,
         validUntil: DateTime(2027, 10, 31),
@@ -98,7 +104,7 @@ final List<GuardVehicle> sampleVehicles = [
           id: 'veh-4', plateNumber: 'TRK-220', makeModel: 'Suzuki Ertiga',
           color: 'Red', driverId: 'drv-4'),
       pass: VehiclePass(
-        passNumber: '00333',
+        passNumber: 'S124',
         vehicleId: 'veh-4',
         passType: PassType.parentGuardianWithParking,
         validUntil: DateTime(2027, 10, 31),
@@ -109,9 +115,15 @@ final List<GuardVehicle> sampleVehicles = [
 ];
 
 /// TODO: replace with repository.findVehicleBy...(). Returns null if unknown.
+///
+/// Both sides are normalized ("S 123", "s123" and "S123" are the same pass),
+/// so a space in the stored data can no longer break the lookup.
 GuardVehicle? findVehicleByPassNumber(String passNumber) {
+  final wanted = PassNumberValidator.normalize(passNumber);
+  if (wanted == null) return null;
+
   for (final v in sampleVehicles) {
-    if (v.passNumber == passNumber) return v;
+    if (PassNumberValidator.normalize(v.passNumber) == wanted) return v;
   }
   return null;
 }

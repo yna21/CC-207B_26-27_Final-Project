@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:websupark/screens/guard/data/sample_guard_data.dart';
+import 'package:websupark/screens/guard/models/guard_case.dart';
 import 'package:websupark/screens/guard/models/past_violation.dart';
 import 'package:websupark/screens/guard/models/vehicle_check.dart';
 import 'package:websupark/screens/guard/utils/time_format.dart';
@@ -18,6 +19,11 @@ class GuardLog extends ChangeNotifier {
 
   final List<VehicleCheck> _checks = [];
   final Map<String, List<PastViolation>> _violations = {};
+
+  /// The full case (vehicle, reading, and the report once submitted) of each
+  /// check made in this session, by check id. Lets a tapped card open its
+  /// details.
+  final Map<String, GuardCase> _cases = {};
   int _checkSeq = 0;
   int _incidentSeq = 182;
 
@@ -92,6 +98,17 @@ class GuardLog extends ChangeNotifier {
     }
     _notify();
   }
+
+  /// Remembers (or updates) the case of a check. Does nothing without a
+  /// check id.
+  void saveCase(GuardCase guardCase) {
+    final id = guardCase.checkId;
+    if (id != null) _cases[id] = guardCase;
+  }
+
+  /// The saved case of a check, or null (for example the starting sample
+  /// checks, which have no vehicle record behind them).
+  GuardCase? caseFor(String checkId) => _cases[checkId];
 
   /// Time of the latest check of [plate] in this shift, or null.
   String? lastCheckTimeFor(String plate) {

@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:websupark/screens/guard/models/guard_case.dart';
 import 'package:websupark/screens/guard/models/violation_type.dart';
