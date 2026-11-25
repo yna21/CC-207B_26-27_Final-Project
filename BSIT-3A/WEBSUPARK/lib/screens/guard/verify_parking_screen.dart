@@ -302,8 +302,7 @@ class _AreaPickerCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Select the campus area where you found this vehicle. '
-            'WEBSUPARK does not use GPS, so the location is chosen by the guard.',
+            'Select the campus area where you found this vehicle. ',
             style: TextStyle(
                 fontSize: 12.5, height: 1.35, color: AppColors.textMuted),
           ),
