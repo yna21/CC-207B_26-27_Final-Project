@@ -231,7 +231,7 @@ class _ScanVehiclePassScreenState extends State<ScanVehiclePassScreen> {
     if (!PassRecognitionService.isAvailable) {
       setState(() {
         _scanStatus =
-            'Pass recognition is not set up (web/ocr_helper.js). Use manual entry.';
+            'Pass recognition is not set up (web/pass_ocr_helper.js). Use manual entry.';
       });
       return;
     }
@@ -591,7 +591,7 @@ class _ScanVehiclePassScreenState extends State<ScanVehiclePassScreen> {
       backgroundColor: AppColors.background,
       body: LayoutBuilder(
         builder: (context, box) {
-          // Phone: the camera fills the screen. Wider: a compact camera card.
+          // Phone: the camera fills the screen. Wider: a rounded camera card.
           final card = box.maxWidth > 460;
 
           final camera = ColoredBox(

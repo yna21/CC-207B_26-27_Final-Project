@@ -1,18 +1,19 @@
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:websupark/models/app_user.dart';
 import 'package:websupark/screens/guard/data/sample_guard_data.dart';
 import 'package:websupark/screens/guard/models/guard_case.dart';
 import 'package:websupark/screens/guard/models/past_violation.dart';
 import 'package:websupark/screens/guard/models/vehicle_check.dart';
 import 'package:websupark/screens/guard/utils/time_format.dart';
+import 'package:websupark/services/app_services.dart';
 
-/// In-memory record of what the guard did in this session:
-/// the "Recent checks" list, reported incidents and new violations.
-/// TODO: later replace with the shared repository / Firestore.
 class GuardLog extends ChangeNotifier {
   GuardLog._() {
     _checks.addAll(sampleRecentChecks);
+    unawaited(_loadChecks());
   }
 
   static final GuardLog instance = GuardLog._();
@@ -20,15 +21,9 @@ class GuardLog extends ChangeNotifier {
   final List<VehicleCheck> _checks = [];
   final Map<String, List<PastViolation>> _violations = {};
 
-  /// The full case (vehicle, reading, and the report once submitted) of each
-  /// check made in this session, by check id. Lets a tapped card open its
-  /// details.
   final Map<String, GuardCase> _cases = {};
-  int _checkSeq = 0;
   int _incidentSeq = 182;
 
-  /// Listeners are told after the current frame, so a screen can log a check
-  /// from initState without causing "setState during build" errors.
   void _notify() => scheduleMicrotask(notifyListeners);
 
   /// Newest first.
@@ -37,9 +32,54 @@ class GuardLog extends ChangeNotifier {
   int get reportedCount =>
       _checks.where((c) => c.status == CheckStatus.reported).length;
 
-  /// Adds a check at the top of "Recent checks" and returns its id.
-  /// Checking the same vehicle in the same place again (same result) reuses
-  /// the latest entry instead of adding a duplicate.
+  /// Loads saved checks without changing the existing screen interface.
+  Future<void> _loadChecks() async {
+    try {
+      final savedChecks = await AppServices.vehicleChecks.getAll();
+
+      if (savedChecks.isEmpty) return;
+
+      // Keep checks created locally while the Firestore request was running.
+      final localChecks = _checks
+          .where((check) => check.id.startsWith('chk-'))
+          .toList();
+
+      _checks
+        ..clear()
+        ..addAll(localChecks)
+        ..addAll(
+          savedChecks.where(
+            (saved) => !_checks.any((local) => local.id == saved.id),
+          ),
+        );
+
+      _notify();
+    } catch (e) {
+      debugPrint('Unable to load vehicle checks: $e');
+    }
+  }
+
+  /// Saves a check using the currently signed-in guard's account.
+  Future<void> _persistCheck(VehicleCheck check) async {
+    try {
+      final user = AppServices.auth.currentUser;
+
+      if (user == null || user.role != UserRole.guard) {
+        debugPrint('Vehicle check not saved: no signed-in guard.');
+        return;
+      }
+
+      await AppServices.vehicleChecks.save(
+        check,
+        guardUid: user.id,
+        guardName: user.fullName,
+      );
+    } catch (e) {
+      debugPrint('Unable to save vehicle check: $e');
+    }
+  }
+
+  /// Adds a check immediately and saves it in the background.
   String recordCheck({
     required String plate,
     required String location,
@@ -55,48 +95,57 @@ class GuardLog extends ChangeNotifier {
         return last.id;
       }
     }
-    final id = 'chk-${++_checkSeq}';
-    _checks.insert(
-      0,
-      VehicleCheck(
-        id: id,
-        plate: plate,
-        time: formatHm(DateTime.now()),
-        location: location,
-        status: status,
-        driverName: driverName,
-        passTypeLabel: passTypeLabel,
-      ),
+
+    final check = VehicleCheck(
+      id: 'chk-${DateTime.now().microsecondsSinceEpoch}',
+      plate: plate,
+      time: formatHm(DateTime.now()),
+      location: location,
+      status: status,
+      driverName: driverName,
+      passTypeLabel: passTypeLabel,
     );
+
+    _checks.insert(0, check);
     _notify();
-    return id;
+
+    unawaited(_persistCheck(check));
+
+    return check.id;
   }
 
-  /// A submitted violation: the check becomes "REPORTED".
+  /// Updates a check to REPORTED and saves the change.
   void markReported(
     String? checkId, {
     required String plate,
     required String location,
     required String incidentRef,
   }) {
-    final i = checkId == null ? -1 : _checks.indexWhere((c) => c.id == checkId);
+    final i =
+        checkId == null ? -1 : _checks.indexWhere((c) => c.id == checkId);
+
+    late final VehicleCheck updatedCheck;
+
     if (i >= 0) {
-      _checks[i] = _checks[i]
-          .copyWith(status: CheckStatus.reported, incidentRef: incidentRef);
-    } else {
-      _checks.insert(
-        0,
-        VehicleCheck(
-          id: 'chk-${++_checkSeq}',
-          plate: plate,
-          time: formatHm(DateTime.now()),
-          location: location,
-          status: CheckStatus.reported,
-          incidentRef: incidentRef,
-        ),
+      updatedCheck = _checks[i].copyWith(
+        status: CheckStatus.reported,
+        incidentRef: incidentRef,
       );
+      _checks[i] = updatedCheck;
+    } else {
+      updatedCheck = VehicleCheck(
+        id: 'chk-${DateTime.now().microsecondsSinceEpoch}',
+        plate: plate,
+        time: formatHm(DateTime.now()),
+        location: location,
+        status: CheckStatus.reported,
+        incidentRef: incidentRef,
+      );
+      _checks.insert(0, updatedCheck);
     }
+
     _notify();
+    unawaited(_persistCheck(updatedCheck));
   }
 
   /// Remembers (or updates) the case of a check. Does nothing without a
@@ -118,15 +167,15 @@ class GuardLog extends ChangeNotifier {
     return null;
   }
 
-  /// "INC-2026-1120-183"
+  /// Generates the next incident reference.
   String nextIncidentRef() {
     final now = DateTime.now();
     _incidentSeq++;
     return 'INC-${now.year}-${monthDayCode(now)}-$_incidentSeq';
   }
 
-  /// Violations reported in this session, so the next scan of the same
-  /// vehicle shows them (and the offense number goes up).
+  /// Existing in-memory violation history.
+  /// Firestore violation history will be integrated in the next stage.
   List<PastViolation> violationsFor(String plate) =>
       List.unmodifiable(_violations[plate] ?? const []);
 

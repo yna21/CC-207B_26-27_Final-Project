@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:websupark/routes/app_routes.dart';
 import 'package:websupark/screens/driver/driver_common.dart';
-import 'package:websupark/screens/driver/edit_vehicle_screen.dart';
-import 'package:websupark/screens/driver/renewal_common.dart';
 import 'package:websupark/theme/app_colors.dart';
 import 'package:websupark/widgets/status_chip.dart';
 
@@ -10,147 +8,10 @@ import 'package:websupark/widgets/status_chip.dart';
 // SAMPLE DATA (layout only)
 // TODO: replace with repository data
 // ---------------------------------------------------------------------------
-// Details the driver can edit (see edit_vehicle_screen.dart).
-const VehicleDetails _initialVehicle = VehicleDetails(
-  name: 'Yana', // TODO: replace with repository data
-  mobile: '+63 917 555 0148', // TODO: replace with repository data
-  color: 'White', // TODO: replace with repository data
-  type: 'Toyota Vios', // TODO: replace with repository data
-);
-
-// Details only the Parking Services Office can change.
+const String _vehicleName = 'White Toyota Vios'; // TODO: replace with repository data
 const String _plateNumber = 'ABC-1234'; // TODO: replace with repository data
 const String _passNumber = 'BLUE-025'; // TODO: replace with repository data
-const String _passType = 'Blue Pass'; // TODO: replace with repository data
 const String _passExpiration = 'March 31, 2027'; // TODO: replace with repository data
-const String _assignedArea = 'Parking Area A'; // TODO: replace with repository data
-const String _assignedSlot = 'A-025'; // TODO: replace with repository data
-
-/// D5 My Vehicle: registration details, edit button and pass renewal.
-/// It is a StatefulWidget because the details change after an edit.
-class DriverVehicleScreen extends StatefulWidget {
-  const DriverVehicleScreen({super.key});
-
-  @override
-  State<DriverVehicleScreen> createState() => _DriverVehicleScreenState();
-}
-
-class _DriverVehicleScreenState extends State<DriverVehicleScreen> {
-  VehicleDetails _vehicle = _initialVehicle;
-
-  // "White Toyota Vios" is built from the color and the type.
-  String get _vehicleName => '${_vehicle.color} ${_vehicle.type}';
-
-  // Rows of the Registration Details card, in the prototype's order.
-  List<_Detail> get _details => [
-        _Detail('Name', _vehicle.name),
-        _Detail('Mobile number', _vehicle.mobile),
-        const _Detail('Vehicle plate number', _plateNumber),
-        _Detail('Vehicle color', _vehicle.color),
-        _Detail('Vehicle type', _vehicle.type),
-        const _Detail('Vehicle pass number', _passNumber),
-        const _Detail('Pass type', _passType),
-        const _Detail('Pass expiration', _passExpiration),
-        const _Detail('Assigned parking area', _assignedArea),
-        const _Detail('Assigned parking number', _assignedSlot),
-      ];
-
-  // Rows shown as "cannot be changed" on the edit screen.
-  static const List<RenewalRow> _lockedRows = [
-    RenewalRow('Plate number', _plateNumber),
-    RenewalRow('Pass number', _passNumber),
-    RenewalRow('Pass type', _passType),
-    RenewalRow('Pass expiration', _passExpiration),
-    RenewalRow('Assigned parking area', _assignedArea),
-    RenewalRow('Assigned parking number', _assignedSlot),
-  ];
-
-  // Opens the edit screen and waits for it to close. If the driver saved,
-  // the screen returns the new details; if they cancelled, it returns null.
-  Future<void> _editVehicle() async {
-    final updated = await Navigator.push<VehicleDetails>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => EditVehicleScreen(
-          initial: _vehicle,
-          lockedRows: _lockedRows,
-        ),
-      ),
-    );
-
-    if (updated == null || !mounted) return;
-    setState(() => _vehicle = updated);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Vehicle details updated.')),
-    );
-  }
-
-  // Opens step 1 of the renewal flow (see renewal_payment_screen.dart).
-  void _startRenewal() {
-    Navigator.pushNamed(context, AppRoutes.driverRenewalPayment);
-  }
-
-  // "Learn more" explains when renewal is available.
-  void _showLearnMore() {
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Vehicle Pass Renewal'),
-        content: const Text(
-          'Renewal opens 30 days before your pass expires. '
-          'Bring your current pass and registration.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return DriverPage(
-      children: [
-        DriverHeader(
-          title: 'My Vehicle',
-          subtitle: 'Registered driver and pass details',
-          icon: Icons.edit_outlined,
-          onIconTap: _editVehicle,
-        ),
-        const SizedBox(height: 16),
-        _VehicleBanner(vehicleName: _vehicleName),
-        const SizedBox(height: 20),
-        const DriverSectionHeader(title: 'Registration Details'),
-        const SizedBox(height: 10),
-        _DetailsCard(details: _details),
-        const SizedBox(height: 20),
-        DriverSectionHeader(
-          title: 'Vehicle Pass Renewal',
-          action: 'Learn more',
-          onActionTap: _showLearnMore,
-        ),
-        const SizedBox(height: 10),
-        _RenewalTile(onTap: _startRenewal),
-        const SizedBox(height: 14),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            // The theme gives every button the blue style; this one is red.
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
-            onPressed: _startRenewal,
-            child: const Text(
-              'RENEW VEHICLE PASS',
-              style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.5),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class _Detail {
   const _Detail(this.label, this.value);
@@ -159,11 +20,86 @@ class _Detail {
   final String value;
 }
 
+// TODO: replace with repository data
+const List<_Detail> _details = [
+  _Detail('Name', 'Yana'),
+  _Detail('Mobile number', '+63 917 555 0148'),
+  _Detail('Vehicle plate number', _plateNumber),
+  _Detail('Vehicle color', 'White'),
+  _Detail('Vehicle type', 'Toyota Vios'),
+  _Detail('Vehicle pass number', _passNumber),
+  _Detail('Pass type', 'Blue Pass'),
+  _Detail('Pass expiration', _passExpiration),
+  _Detail('Assigned parking area', 'Parking Area A'),
+  _Detail('Assigned parking number', 'A-025'),
+];
+
+/// D5 My Vehicle: registration details and the pass renewal entry point.
+class DriverVehicleScreen extends StatelessWidget {
+  const DriverVehicleScreen({super.key});
+
+  // Opens step 1 of the renewal flow (see renewal_payment_screen.dart).
+  void _startRenewal(BuildContext context) {
+    Navigator.pushNamed(context, AppRoutes.driverRenewalPayment);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DriverPage(
+      children: [
+        // The prototype shows a pencil icon but no edit screen,
+        // so the icon does nothing for now.
+        const DriverHeader(
+          title: 'My Vehicle',
+          subtitle: 'Registered driver and pass details',
+          icon: Icons.edit_outlined,
+        ),
+        const SizedBox(height: 16),
+        // Two columns on a wide screen, one column (same order) on a phone.
+        DriverColumns(
+          left: const [
+            _VehicleBanner(),
+            SizedBox(height: 20),
+            DriverSectionHeader(title: 'Registration Details'),
+            SizedBox(height: 10),
+            _DetailsCard(),
+          ],
+          right: [
+            // "Learn more" has no screen in the prototype, so it does nothing yet.
+            const DriverSectionHeader(
+              title: 'Vehicle Pass Renewal',
+              action: 'Learn more',
+            ),
+            const SizedBox(height: 10),
+            _RenewalTile(onTap: () => _startRenewal(context)),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                // The theme gives every button the blue style; this one is red.
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.danger,
+                ),
+                onPressed: () => _startRenewal(context),
+                child: const Text(
+                  'RENEW VEHICLE PASS',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
 /// Dark blue card at the top: vehicle, plate, pass and Active chip.
 class _VehicleBanner extends StatelessWidget {
-  const _VehicleBanner({required this.vehicleName});
-
-  final String vehicleName;
+  const _VehicleBanner();
 
   @override
   Widget build(BuildContext context) {
@@ -182,20 +118,20 @@ class _VehicleBanner extends StatelessWidget {
             size: 38,
           ),
           const SizedBox(width: 12),
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  vehicleName,
-                  style: const TextStyle(
+                  _vehicleName,
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 2),
-                const Text(
+                SizedBox(height: 2),
+                Text(
                   '$_plateNumber  ·  $_passNumber',
                   style: TextStyle(fontSize: 12, color: Colors.white70),
                 ),
@@ -211,9 +147,7 @@ class _VehicleBanner extends StatelessWidget {
 
 /// White card listing every registration detail, one per row.
 class _DetailsCard extends StatelessWidget {
-  const _DetailsCard({required this.details});
-
-  final List<_Detail> details;
+  const _DetailsCard();
 
   @override
   Widget build(BuildContext context) {
@@ -223,10 +157,10 @@ class _DetailsCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
         child: Column(
           children: [
-            for (var i = 0; i < details.length; i++) ...[
-              _DetailRow(detail: details[i]),
+            for (var i = 0; i < _details.length; i++) ...[
+              _DetailRow(detail: _details[i]),
               // A thin line between rows, but not after the last one.
-              if (i != details.length - 1)
+              if (i != _details.length - 1)
                 const Divider(height: 1, color: AppColors.border),
             ],
           ],
@@ -243,28 +177,10 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // DriverInfoRow puts the value under the label on very narrow screens.
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 11),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              detail.label,
-              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            detail.value,
-            textAlign: TextAlign.right,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ],
-      ),
+      child: DriverInfoRow(label: detail.label, value: detail.value),
     );
   }
 }

@@ -58,16 +58,22 @@ class DriverAssignmentScreen extends StatelessWidget {
           icon: Icons.help_outline,
         ),
         SizedBox(height: 16),
-        _AssignmentCard(),
-        SizedBox(height: 20),
-        DriverSectionHeader(
-          title: 'Parking Map',
-          action: 'Area A · $_openSpaces available',
+        // Two columns on a wide screen, one column (same order) on a phone.
+        DriverColumns(
+          leftFlex: 2,
+          rightFlex: 3,
+          left: [_AssignmentCard()],
+          right: [
+            DriverSectionHeader(
+              title: 'Parking Map',
+              action: 'Area A · $_openSpaces available',
+            ),
+            SizedBox(height: 10),
+            _MapCard(),
+            SizedBox(height: 12),
+            _PassValidCard(),
+          ],
         ),
-        SizedBox(height: 10),
-        _MapCard(),
-        SizedBox(height: 12),
-        _PassValidCard(),
       ],
     );
   }
@@ -250,14 +256,18 @@ class _MapCard extends StatelessWidget {
             const SizedBox(height: 10),
             const _SlotRow(slots: _bottomRow),
             const SizedBox(height: 14),
-            const Row(
-              children: [
-                _LegendItem(color: AppColors.navy, label: 'Your space'),
-                SizedBox(width: 14),
-                _LegendItem(color: AppColors.successSoft, label: 'Available'),
-                SizedBox(width: 14),
-                _LegendItem(color: AppColors.border, label: 'Occupied'),
-              ],
+            // Wrap moves a legend item to the next line when there is no room.
+            const SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                spacing: 14,
+                runSpacing: 6,
+                children: [
+                  _LegendItem(color: AppColors.navy, label: 'Your space'),
+                  _LegendItem(color: AppColors.successSoft, label: 'Available'),
+                  _LegendItem(color: AppColors.border, label: 'Occupied'),
+                ],
+              ),
             ),
           ],
         ),
@@ -316,20 +326,26 @@ class _SlotTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: border),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (slot.state == _SlotState.yours)
-            Icon(Icons.directions_car, size: 14, color: foreground),
-          Text(
-            slot.id,
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w600,
-              color: foreground,
-            ),
+      // FittedBox shrinks the icon and text to fit when a tile gets narrow.
+      child: Center(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (slot.state == _SlotState.yours)
+                Icon(Icons.directions_car, size: 14, color: foreground),
+              Text(
+                slot.id,
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                  color: foreground,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

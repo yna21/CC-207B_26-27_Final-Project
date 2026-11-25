@@ -15,6 +15,8 @@ class RenewalSubmittedScreen extends StatelessWidget {
       title: 'Renewal Submitted',
       subtitle: 'Your application has been received',
       icon: Icons.receipt_long_outlined,
+      // A narrow centered column looks best for a confirmation message.
+      contentMaxWidth: 520,
       // No step: the progress bar is only for steps 1 to 3.
       children: [
         const SizedBox(height: 16),
