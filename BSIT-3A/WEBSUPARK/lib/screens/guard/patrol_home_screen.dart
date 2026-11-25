@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:websupark/screens/guard/data/guard_log.dart';
 import 'package:websupark/screens/guard/widgets/recent_check_tile.dart';
 import 'package:websupark/routes/app_routes.dart';
-import 'package:websupark/screens/guard/recent_checks_screen.dart';
+import 'package:websupark/screens/guard/guard_routes.dart';
 import 'package:websupark/theme/app_colors.dart';
 import 'package:websupark/screens/guard/widgets/guard_widgets.dart';
-import 'package:websupark/widgets/phone_frame.dart';
 import 'package:websupark/widgets/status_chip.dart';
 
 class PatrolHomeScreen extends StatelessWidget {
-  const PatrolHomeScreen({super.key});
+  const PatrolHomeScreen({super.key, this.onViewAll});
+
+  /// Called by "View all". GuardShell uses it to switch to the Checks tab.
+  /// When null, Recent Checks opens as a separate page.
+  final VoidCallback? onViewAll;
 
   @override
   Widget build(BuildContext context) {
@@ -18,9 +21,6 @@ class PatrolHomeScreen extends StatelessWidget {
         title: 'Patrol Console',
         subtitle: 'WVSU MAIN CAMPUS',
         showBack: false,
-        actions: [
-          SquareIconButton(icon: Icons.sensors, onTap: () {}),
-        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -34,63 +34,74 @@ class PatrolHomeScreen extends StatelessWidget {
                 onScan: () => Navigator.pushNamed(context, AppRoutes.guardScan),
               ),
               const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'RECENT CHECKS',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) =>
-                            const PhoneFrame(child: RecentChecksScreen()),
-                      ),
-                    ),
-                    child: const Text(
-                      'View all',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.action,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              ListenableBuilder(
-                listenable: GuardLog.instance,
-                builder: (context, _) {
-                  final checks = GuardLog.instance.checks.take(3).toList();
-                  if (checks.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Text('No checks yet.',
-                          style: TextStyle(color: AppColors.textMuted)),
-                    );
-                  }
-                  return Column(
-                    children: [
-                      for (final check in checks) ...[
-                        RecentCheckTile(check: check),
-                        const SizedBox(height: 10),
-                      ],
-                    ],
-                  );
-                },
-              ),
+              _RecentSection(onViewAll: onViewAll),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// "RECENT CHECKS" header and the latest 5 checks.
+class _RecentSection extends StatelessWidget {
+  final VoidCallback? onViewAll;
+  const _RecentSection({this.onViewAll});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'RECENT CHECKS',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.6,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            GestureDetector(
+              onTap: onViewAll ??
+                  () => Navigator.pushNamed(context, guardRecentChecksRoute),
+              child: const Text(
+                'View all',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.action,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ListenableBuilder(
+          listenable: GuardLog.instance,
+          builder: (context, _) {
+            final checks = GuardLog.instance.checks.take(5).toList();
+            if (checks.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text('No checks yet.',
+                    style: TextStyle(color: AppColors.textMuted)),
+              );
+            }
+            return Column(
+              children: [
+                for (final check in checks) ...[
+                  RecentCheckTile(check: check),
+                  const SizedBox(height: 10),
+                ],
+              ],
+            );
+          },
+        ),
+      ],
     );
   }
 }

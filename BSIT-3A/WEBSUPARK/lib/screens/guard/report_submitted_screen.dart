@@ -6,7 +6,7 @@ import 'package:websupark/screens/guard/incident_details_screen.dart';
 import 'package:websupark/theme/app_colors.dart';
 import 'package:websupark/screens/guard/widgets/guard_colors.dart';
 import 'package:websupark/screens/guard/widgets/guard_widgets.dart';
-import 'package:websupark/widgets/phone_frame.dart';
+import 'package:websupark/screens/guard/widgets/guard_page.dart';
 
 class ReportSubmittedScreen extends StatelessWidget {
   final GuardCase guardCase;
@@ -29,12 +29,6 @@ class ReportSubmittedScreen extends StatelessWidget {
         title: 'Report Submitted',
         subtitle: 'INCIDENT LOGGED',
         showBack: false,
-        actions: [
-          SquareIconButton(
-            icon: Icons.close,
-            onTap: () => _returnToPatrol(context),
-          ),
-        ],
       ),
       body: SafeArea(
         child: ScreenBody(
@@ -54,8 +48,8 @@ class ReportSubmittedScreen extends StatelessWidget {
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute<void>(
-                  builder: (_) => PhoneFrame(
-                      child: IncidentDetailsScreen(guardCase: guardCase)),
+                  builder: (_) =>
+                      GuardPage(child: IncidentDetailsScreen(guardCase: guardCase)),
                 ),
               ),
               icon: const Icon(Icons.description_outlined, size: 20),

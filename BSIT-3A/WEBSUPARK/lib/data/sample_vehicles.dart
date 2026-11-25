@@ -25,28 +25,28 @@ final List<Vehicle> sampleVehicles = [
 
 final List<VehiclePass> sampleVehiclePasses = [
   VehiclePass(
-    passNumber: '00921',
+    passNumber: 'S 921',
     vehicleId: 'v-001',
     passType: PassType.studentWithParking,
     assignedAreaId: 'P-6',
     validUntil: DateTime(2027, 3, 31),
   ),
   VehiclePass(
-    passNumber: '00347',
+    passNumber: 'E 123',
     vehicleId: 'v-002',
     passType: PassType.facultyStaffWithParking,
     assignedAreaId: 'P-7',
     validUntil: DateTime(2027, 10, 31),
   ),
   VehiclePass(
-    passNumber: '00512',
+    passNumber: 'S 512',
     vehicleId: 'v-003',
     passType: PassType.studentWithParking,
     assignedAreaId: 'P-4',
     validUntil: DateTime(2027, 3, 31),
   ),
   VehiclePass(
-    passNumber: '00688',
+    passNumber: 'E 688',
     vehicleId: 'v-004',
     passType: PassType.facultyStaffWithParking,
     assignedAreaId: 'P-14',
@@ -54,7 +54,7 @@ final List<VehiclePass> sampleVehiclePasses = [
   ),
   // Yellow pass (no parking privilege)
   VehiclePass(
-    passNumber: '00099',
+    passNumber: '123',
     vehicleId: 'v-005',
     passType: PassType.withoutParking,
     status: PassStatus.expired,
